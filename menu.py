@@ -1,4 +1,7 @@
 #SISTEMA DE ALMACEN
+
+productos = []
+
 opcion = ""
 
 print("---------ALMACEN CASTORES-----------")
@@ -16,13 +19,48 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
     opcion = input("Selecciona una opcion: ") #Aqui estamos declarando una variable la cual se llama opcion. lo que hace es que al momento de que el usuario inigrese su respuesta se almacena en opcion
 
     if opcion == "1": #Estas son las opciones que estan disponibles 
-        print("Registrar producto")
+
+        print("REGISTRA EL PRODUCTO")
+
+        id = input("Ingrese el ID: ")
+        nombre = input("Ingrese el nombre: ")
+        categoria = input("Ingrese la categoria: ")
+        precio = int(input("Ingrese el precio: "))
+        stock = int(input("Ingrese el stock: "))
+        ubicacion = input("Ingrese la ubicacion: ")
+
+        productos.append({
+            "id": id,
+            "nombre": nombre,
+            "categoria": categoria,
+            "precio": precio,
+            "stock": stock,
+            "ubicacion": ubicacion,
+        })
 
     elif opcion == "2":
-        print("Mostrando productos")
+
+        for producto in productos: # Por cada producto que exista dentro de la lista productos, guarda temporalmente ese producto en la variable producto
+            print(producto["id"])
+            print(producto["nombre"])
+            print(producto["categoria"])
+            print(producto["precio"])
+            print(producto["stock"])
+            print(producto["ubicacion"])
 
     elif opcion == "3":
-        print("Buscando productos")
+        print("INGRESE EL ID DEL PRODUCTO")
+        id_buscar = input("¿QUE ID DESEAS BUSCAR?")
+
+        encontrado = False
+
+        for producto in productos:
+            if id_buscar == producto["id"]:
+                print(producto["id"])
+                encontrado = True
+
+        if encontrado == False:
+            print("PRODUCTO NO ENCONTRADO")
 
     elif opcion == "4":
         print("Entrada de mercancia")
