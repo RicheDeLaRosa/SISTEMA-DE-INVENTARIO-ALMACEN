@@ -57,6 +57,11 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
         for producto in productos:
             if id_buscar == producto["id"]:
                 print(producto["id"])
+                print(producto["nombre"])
+                print(producto["categoria"])
+                print(producto["precio"])
+                print(producto["stock"])
+                print(producto["ubicacion"])
                 encontrado = True
 
         if encontrado == False:
