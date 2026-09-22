@@ -23,20 +23,29 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
         print("REGISTRA EL PRODUCTO")
 
         id = input("Ingrese el ID: ")
-        nombre = input("Ingrese el nombre: ")
-        categoria = input("Ingrese la categoria: ")
-        precio = int(input("Ingrese el precio: "))
-        stock = int(input("Ingrese el stock: "))
-        ubicacion = input("Ingrese la ubicacion: ")
 
-        productos.append({
-            "id": id,
-            "nombre": nombre,
-            "categoria": categoria,
-            "precio": precio,
-            "stock": stock,
-            "ubicacion": ubicacion,
+        encontrado = False #Colocamos esta validacion al inicio para asi comprobar si el ID ya esta registrado, si el ID ya se encuentra registrado arroja el mensaje de que ya se encuentra registrado, de lo contrario si no esta registrado continua ingresando los datos del producto
+        for producto in productos:
+            if id == producto["id"]:
+                encontrado = True
+
+        if encontrado == False:  
+            nombre = input("Ingrese el nombre: ")
+            categoria = input("Ingrese la categoria: ")
+            precio = int(input("Ingrese el precio: "))                
+            stock = int(input("Ingrese el stock: "))
+            ubicacion = input("Ingrese la ubicacion: ")
+
+            productos.append({
+                "id": id,
+                "nombre": nombre,
+                "categoria": categoria,
+                "precio": precio,
+                "stock": stock,
+                "ubicacion": ubicacion,
         })
+        else:
+            print("EL ID YA EXISTE")
 
     elif opcion == "2":
 
@@ -68,20 +77,28 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
             print("PRODUCTO NO ENCONTRADO")
 
     elif opcion == "4":
-        id_entrada = input("¿QUE ID DESEAS BUSCAR? ") 
+        id_entrada = input("¿QUE ID DESEAS BUSCAR? ")
+        encontrado = False
 
         for producto in productos: #Sigue la misma logica del apartado buscar producto. lo que hace es comparar el id buscado con el id de qie producto registrado
             if id_entrada == producto["id"]: #Si el id coincide muestra todos los datos del producto
+
+                encontrado = True
 
                 cantidad = int(input("¿CUANTAS UNIDADES VAN A ENTRAR? "))
                 producto["stock"] = producto["stock"] + cantidad #Lo que hace este apartado es hacer la operacion que va a SUMAR la cantidad que va entrar con el stock que ya hay
                 print(producto)
 
+        if encontrado == False:
+            print("PRODUCTO NO ENOCONTRADO")
+
     elif opcion == "5":
         id_salida = input("¿QUE ID DESEAS BUSCAR? ")
+        encontrado = False
         
         for producto in productos:
             if id_salida == producto["id"]:
+                encontrado = True
         
                 cantidad = int(input("¿CUANTAS UNIDADES VAN A SALIR? "))
                 if cantidad <= producto["stock"]:
@@ -92,11 +109,17 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
                 else:
                     print("NO HAY SUFICIENTE STOCK PARA SALIR") #De lo contrario si no hay suficiente stock para salir mmuestra este mensaje
 
+        if encontrado ==  False:
+            print("PRODUCTO NO ENCONTRADO")
+
     elif opcion == "6":
         id_actualizar = input("¿QUE ID DESEAS BUSCAR? ")
+        encontrado = False
 
         for producto in productos:
             if id_actualizar == producto["id"]:
+                encontrado = True
+
                 nuevo_precio = int(input("Ingrese el nuevo precio: ")) #En este apartado el nuevo precio que se ingrese se guarda en la variable (nuevo_precio)
                 nuevo_nombre = (input("Ingrese el nuevo nombre: "))
                 nuevo_categoria = (input("Ingrese la nueva categoria: "))
@@ -109,14 +132,21 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
 
                 print(producto)
 
+        if encontrado == False:
+            print("PRODUCTO NO ENCONTRADO")
+
     elif opcion == "7":
         id_eliminar = input("¿QUE ID DESEAS BUSCAR? ")
+
+        encontrado = False
         
         for producto in productos:
             if id_eliminar == producto["id"]:
-                print("Producto encontrado")
-
+                encontrado = True
                 productos.remove(producto)
+
+        if encontrado == False:
+            print("PRODUCTO NO ENCONTRADO")
 
     elif opcion == "8":
         print("Saliendo del programa... ")
