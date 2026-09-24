@@ -12,7 +12,7 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
     print("3. Buscar producto ")
     print("4. Entrada de mercancia ")
     print("5. Salida de mercancia" )
-    print("6. Actualizar, ID, Nombre, Categoria, Precio, Ubicacion" )
+    print("6. Actualizar, Nombre, Categoria, Precio, Ubicacion" )
     print("7. Eliminar producto ")
     print("8. Salir ")
 
@@ -86,11 +86,14 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
                 encontrado = True
 
                 cantidad = int(input("¿CUANTAS UNIDADES VAN A ENTRAR? "))
-                producto["stock"] = producto["stock"] + cantidad #Lo que hace este apartado es hacer la operacion que va a SUMAR la cantidad que va entrar con el stock que ya hay
-                print(producto)
+                if cantidad > 0:
+                    producto["stock"] = producto["stock"] + cantidad #Lo que hace este apartado es hacer la operacion que va a SUMAR la cantidad que va entrar con el stock que ya hay
+                    print(producto)
+                else:
+                    print("NO SE PUEDEN AGREGAR NUMEROS NEGATIVOS")
 
         if encontrado == False:
-            print("PRODUCTO NO ENOCONTRADO")
+            print("NO SE PUEDEN AGREGAR CANTIDADES MENORES O IGUALES A 0")
 
     elif opcion == "5":
         id_salida = input("¿QUE ID DESEAS BUSCAR? ")
@@ -101,13 +104,15 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
                 encontrado = True
         
                 cantidad = int(input("¿CUANTAS UNIDADES VAN A SALIR? "))
-                if cantidad <= producto["stock"]:
-                    producto["stock"] = producto["stock"] - cantidad #Lo que hace este apartado es la operacion que va a RESTAR la cantidad que va a salir con el stock que ya hay
-
-                    print(producto) #Si hay suficiente stock para salir muestra los datos del producto
+                if cantidad > 0:
+                    if cantidad <= producto["stock"]:
+                        producto["stock"] = producto["stock"] - cantidad #Lo que hace este apartado es la operacion que va a RESTAR la cantidad que va a salir con el stock que ya hay
+                        print(producto) #Si hay suficiente stock para salir muestra los datos del producto
+                    else:
+                        print("NO HAY SUFICIENTE STOCK PARA SALIR") #De lo contrario si no hay suficiente stock para salir mmuestra este mensaje
 
                 else:
-                    print("NO HAY SUFICIENTE STOCK PARA SALIR") #De lo contrario si no hay suficiente stock para salir mmuestra este mensaje
+                    print("NO SE PUEDEN SACAR CANTIDADES MENORES O IGUALES A 0")
 
         if encontrado ==  False:
             print("PRODUCTO NO ENCONTRADO")
