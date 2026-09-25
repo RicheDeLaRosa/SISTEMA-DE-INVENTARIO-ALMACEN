@@ -4,7 +4,7 @@ productos = []
 
 opcion = ""
 
-print("---------ALMACEN CASTORES-----------")
+print("---------ALMACEN RICHIE-----------")
 
 while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro del ciclo while, lo que hace que se repita infinitamente hasta que el usuario intruduzca la opcion de salir
     print("1. Registrar producto ") #Lo que hace aqui es mostrar el menu
