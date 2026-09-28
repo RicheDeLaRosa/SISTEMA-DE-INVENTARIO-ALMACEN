@@ -59,15 +59,18 @@ def registrar(): #Lo que hacemos aqui es crear una funcion para que al momento d
         categoria_producto = categoria1.get().strip()
         ubicacion_producto = ubicacion1.get().strip()
 
+        # No se permite guardar el producto si falta algun dato.
         if not all((id_producto, nombre_producto, categoria_producto, ubicacion_producto,
                     precio1.get().strip(), stock1.get().strip())):
             messagebox.showerror("Datos incompletos", "Completa todos los campos.", parent=ventana_registrar)
             return
 
+        # Cada producto debe tener un ID unico para poder identificarlo.
         if any(producto["id"] == id_producto for producto in productos):
             messagebox.showerror("ID duplicado", "Ya existe un producto con ese ID.", parent=ventana_registrar)
             return
 
+        # Convierte precio y stock a enteros y muestra un aviso si no son validos.
         try:
             precio_producto = int(precio1.get())
             stock_producto = int(stock1.get())
@@ -113,6 +116,7 @@ def buscar_producto():
 
     def buscar_por_id():
         id_buscar = entrada_id.get().strip()
+        # next devuelve None cuando ningun producto coincide con el ID.
         producto_encontrado = next(
             (producto for producto in productos if producto["id"] == id_buscar),
             None
@@ -133,6 +137,83 @@ def buscar_producto():
 
     tk.Button(ventana_buscar, command=buscar_por_id, text="BUSCAR", font=("Arial", 12)).pack()
 
+def actualizar_producto():
+    ventana_actualizar = tk.Toplevel()
+    ventana_actualizar.title("ACTUALIZAR PRODUCTO")
+    ventana_actualizar.geometry("400x500")
+
+    tk.Label(ventana_actualizar, text="ID DEL PRODUCTO", font=("Arial", 15)).pack()
+    entrada_id = tk.Entry(ventana_actualizar)
+    entrada_id.pack()
+
+    producto_seleccionado = None
+    campos = {}
+    for clave, etiqueta in (
+        ("nombre", "NUEVO NOMBRE"),
+        ("categoria", "NUEVA CATEGORIA"),
+        ("precio", "NUEVO PRECIO"),
+        ("ubicacion", "NUEVA UBICACION")
+    ):
+        tk.Label(ventana_actualizar, text=etiqueta, font=("Arial", 12)).pack()
+        campos[clave] = tk.Entry(ventana_actualizar)
+        campos[clave].pack()
+
+    def cargar_producto():
+        nonlocal producto_seleccionado
+        # Conserva el producto encontrado para modificarlo despues.
+        producto_seleccionado = next(
+            (producto for producto in productos if producto["id"] == entrada_id.get().strip()),
+            None
+        )
+
+        if producto_seleccionado is None:
+            boton_guardar.config(state="disabled")
+            messagebox.showerror("Producto no encontrado", "No existe un producto con ese ID.", parent=ventana_actualizar)
+            return
+
+        # Rellena el formulario con los datos actuales para editarlos.
+        for clave, campo in campos.items():
+            campo.delete(0, tk.END)
+            campo.insert(0, producto_seleccionado[clave])
+        boton_guardar.config(state="normal")
+
+    def guardar_cambios():
+        if producto_seleccionado is None:
+            return
+
+        valores = {clave: campo.get().strip() for clave, campo in campos.items()}
+        # Los campos editables deben estar completos antes de actualizar.
+        if not all(valores.values()):
+            messagebox.showerror("Datos incompletos", "Completa todos los campos.", parent=ventana_actualizar)
+            return
+
+        # El precio se guarda como entero, igual que al registrar.
+        try:
+            precio_nuevo = int(valores["precio"])
+        except ValueError:
+            messagebox.showerror("Precio inválido", "El precio debe ser un número entero.", parent=ventana_actualizar)
+            return
+
+        # Actualiza solo los campos permitidos el ID y el stock se conservan.
+        producto_seleccionado.update({
+            "nombre": valores["nombre"],
+            "categoria": valores["categoria"],
+            "precio": precio_nuevo,
+            "ubicacion": valores["ubicacion"]
+        })
+        messagebox.showinfo("Producto actualizado", "Los datos se actualizaron correctamente.", parent=ventana_actualizar)
+        ventana_actualizar.destroy()
+
+    tk.Button(ventana_actualizar, command=cargar_producto, text="CARGAR PRODUCTO", font=("Arial", 12)).pack(pady=8)
+    boton_guardar = tk.Button(
+        ventana_actualizar,
+        command=guardar_cambios,
+        text="GUARDAR CAMBIOS",
+        font=("Arial", 12),
+        state="disabled"
+    )
+    boton_guardar.pack()
+
 def gestionar_stock(es_entrada):
     titulo = "ENTRADA DE MERCANCÍA" if es_entrada else "SALIDA DE MERCANCÍA"
     ventana_stock = tk.Toplevel()
@@ -149,6 +230,7 @@ def gestionar_stock(es_entrada):
 
     def aplicar_movimiento():
         id_producto = entrada_id.get().strip()
+        # La cantidad debe ser un entero positivo para cualquier movimiento.
         try:
             cantidad = int(entrada_cantidad.get())
         except ValueError:
@@ -159,15 +241,18 @@ def gestionar_stock(es_entrada):
             messagebox.showerror("Cantidad inválida", "La cantidad debe ser mayor que cero.", parent=ventana_stock)
             return
 
+        # Busca el producto al que se aplicara la entrada o salida.
         producto = next((producto for producto in productos if producto["id"] == id_producto), None)
         if producto is None:
             messagebox.showerror("Producto no encontrado", "No existe un producto con ese ID.", parent=ventana_stock)
             return
 
+        # Evita que una salida deje el inventario con stock negativo.
         if not es_entrada and cantidad > producto["stock"]:
             messagebox.showerror("Stock insuficiente", "No hay suficiente stock para realizar la salida.", parent=ventana_stock)
             return
 
+        # Las entradas suman unidades y las salidas las descuentan.
         if es_entrada:
             producto["stock"] += cantidad
         else:
@@ -197,7 +282,7 @@ boton_entrada.pack()
 boton_salida = tk.Button(ventana, command=lambda: gestionar_stock(False), text="Salida de mercancia", font=("Arial", 15))
 boton_salida.pack()
 
-boton_actualizar = tk.Button(ventana, text="Actualizar producto", font=("Arial", 15))
+boton_actualizar = tk.Button(ventana, command=actualizar_producto, text="Actualizar producto", font=("Arial", 15))
 boton_actualizar.pack()
 
 boton_eliminar = tk.Button(ventana, text="Eliminar producto", font=("Arial", 15))
