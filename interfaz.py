@@ -6,6 +6,8 @@ ventana.title("ALMACEN RICHIE") #Coloca el titulo en la ventana
 
 ventana.geometry("800x600")
 
+productos = []
+
 titulo = tk.Label( #Aqui estamos controlando los detalles del titulo
     ventana,
     text="ALMACEN RICHIE",
@@ -49,7 +51,33 @@ def registrar(): #Lo que hacemos aqui es crear una funcion para que al momento d
     ubicacion1 = tk.Entry(ventana_registrar)
     ubicacion1.pack()
 
-    guardar = tk.Button(ventana_registrar, text="GUARDAR", font=("Arial", 15))
+    def guardar_producto():
+
+        id_producto = label_id1.get() #Obtiene el ID y lo gurda en id_producto
+        nombre_producto = nombre1.get()
+        categoria_producto = categoria1.get()
+        precio_producto = int(precio1.get())
+        stock_producto = int(stock1.get())
+        ubicacion_producto = ubicacion1.get()
+
+        producto = { #Diccionario
+            "id": id_producto,
+            "nombre": nombre_producto,
+            "categoria": categoria_producto,
+            "precio": precio_producto,
+            "stock": stock_producto,
+            "ubicacion": ubicacion_producto
+}
+
+        productos.append(producto) #Esta linea sirve para agregar el producto que acabo de crear a la lista de productos
+
+        print(id_producto)
+        print(nombre_producto)
+        print(categoria_producto)
+        print(precio_producto)
+        print(stock_producto)
+        print(ubicacion_producto)
+    guardar = tk.Button(ventana_registrar,command=guardar_producto, text="GUARDAR", font=("Arial", 15))
     guardar.pack()
 
 
