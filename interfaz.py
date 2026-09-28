@@ -214,6 +214,41 @@ def actualizar_producto():
     )
     boton_guardar.pack()
 
+def eliminar_producto():
+    ventana_eliminar = tk.Toplevel()
+    ventana_eliminar.title("ELIMINAR PRODUCTO")
+    ventana_eliminar.geometry("400x200")
+
+    tk.Label(ventana_eliminar, text="ID DEL PRODUCTO", font=("Arial", 15)).pack()
+    entrada_id = tk.Entry(ventana_eliminar)
+    entrada_id.pack()
+
+    def confirmar_eliminacion():
+        id_producto = entrada_id.get().strip()
+        if not id_producto:
+            messagebox.showerror("ID requerido", "Ingresa el ID del producto.", parent=ventana_eliminar)
+            return
+
+        # Busca el producto antes de pedir confirmacion para eliminarlo.
+        producto = next((producto for producto in productos if producto["id"] == id_producto), None)
+        if producto is None:
+            messagebox.showerror("Producto no encontrado", "No existe un producto con ese ID.", parent=ventana_eliminar)
+            return
+
+        confirmar = messagebox.askyesno(
+            "Confirmar eliminación",
+            f"¿Deseas eliminar el producto '{producto['nombre']}'?",
+            parent=ventana_eliminar
+        )
+        if not confirmar:
+            return
+
+        productos.remove(producto)
+        messagebox.showinfo("Producto eliminado", "El producto se eliminó correctamente.", parent=ventana_eliminar)
+        ventana_eliminar.destroy()
+
+    tk.Button(ventana_eliminar, command=confirmar_eliminacion, text="ELIMINAR", font=("Arial", 12)).pack(pady=10)
+
 def gestionar_stock(es_entrada):
     titulo = "ENTRADA DE MERCANCÍA" if es_entrada else "SALIDA DE MERCANCÍA"
     ventana_stock = tk.Toplevel()
@@ -285,10 +320,10 @@ boton_salida.pack()
 boton_actualizar = tk.Button(ventana, command=actualizar_producto, text="Actualizar producto", font=("Arial", 15))
 boton_actualizar.pack()
 
-boton_eliminar = tk.Button(ventana, text="Eliminar producto", font=("Arial", 15))
+boton_eliminar = tk.Button(ventana, command=eliminar_producto, text="Eliminar producto", font=("Arial", 15))
 boton_eliminar.pack()
 
-boton_salir = tk.Button(ventana, text="Salir", font=("Arial", 15))
+boton_salir = tk.Button(ventana, command=ventana.destroy, text="Salir", font=("Arial", 15))
 boton_salir.pack()
 
 ventana.mainloop()
