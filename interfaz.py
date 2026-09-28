@@ -1,4 +1,5 @@
 import tkinter as tk #Lo que hace esta linea es crear la interfaz grafica
+from tkinter import messagebox
 
 ventana = tk.Tk() #Lo que hace esta linea es crear nuestra ventana principal
 
@@ -53,12 +54,26 @@ def registrar(): #Lo que hacemos aqui es crear una funcion para que al momento d
 
     def guardar_producto():
 
-        id_producto = label_id1.get() #Obtiene el ID y lo gurda en id_producto
-        nombre_producto = nombre1.get()
-        categoria_producto = categoria1.get()
-        precio_producto = int(precio1.get())
-        stock_producto = int(stock1.get())
-        ubicacion_producto = ubicacion1.get()
+        id_producto = label_id1.get().strip()
+        nombre_producto = nombre1.get().strip()
+        categoria_producto = categoria1.get().strip()
+        ubicacion_producto = ubicacion1.get().strip()
+
+        if not all((id_producto, nombre_producto, categoria_producto, ubicacion_producto,
+                    precio1.get().strip(), stock1.get().strip())):
+            messagebox.showerror("Datos incompletos", "Completa todos los campos.", parent=ventana_registrar)
+            return
+
+        if any(producto["id"] == id_producto for producto in productos):
+            messagebox.showerror("ID duplicado", "Ya existe un producto con ese ID.", parent=ventana_registrar)
+            return
+
+        try:
+            precio_producto = int(precio1.get())
+            stock_producto = int(stock1.get())
+        except ValueError:
+            messagebox.showerror("Dato inválido", "El precio y el stock deben ser números enteros.", parent=ventana_registrar)
+            return
 
         producto = { #Diccionario
             "id": id_producto,
@@ -71,29 +86,115 @@ def registrar(): #Lo que hacemos aqui es crear una funcion para que al momento d
 
         productos.append(producto) #Esta linea sirve para agregar el producto que acabo de crear a la lista de productos
 
-        print(id_producto)
-        print(nombre_producto)
-        print(categoria_producto)
-        print(precio_producto)
-        print(stock_producto)
-        print(ubicacion_producto)
+        messagebox.showinfo("Producto guardado", "El producto se registró correctamente.", parent=ventana_registrar)
+        ventana_registrar.destroy()
     guardar = tk.Button(ventana_registrar,command=guardar_producto, text="GUARDAR", font=("Arial", 15))
     guardar.pack()
 
+def mostrar_productos():
+    ventana_mostrar = tk.Toplevel()
+    ventana_mostrar.title("MOSTRAR PRODUCTOS")
+    ventana_mostrar.geometry("400x400")
+
+    for producto in productos: #esta linea significa, por cada producto que exisra dentro de la lista productos haz lo siguiente
+        texto = tk.Label(ventana_mostrar, text=producto)
+        texto.pack()
+
+def buscar_producto():
+    ventana_buscar = tk.Toplevel()
+    ventana_buscar.title("BUSCAR PRODUCTO")
+    ventana_buscar.geometry("400x300")
+
+    tk.Label(ventana_buscar, text="INGRESA EL ID DEL PRODUCTO", font=("Arial", 15)).pack()
+    entrada_id = tk.Entry(ventana_buscar)
+    entrada_id.pack()
+    resultado = tk.Label(ventana_buscar, text="", justify="left", font=("Arial", 12))
+    resultado.pack(pady=10)
+
+    def buscar_por_id():
+        id_buscar = entrada_id.get().strip()
+        producto_encontrado = next(
+            (producto for producto in productos if producto["id"] == id_buscar),
+            None
+        )
+
+        if producto_encontrado is None:
+            resultado.config(text="PRODUCTO NO ENCONTRADO")
+            return
+
+        resultado.config(text=(
+            f"ID: {producto_encontrado['id']}\n"
+            f"Nombre: {producto_encontrado['nombre']}\n"
+            f"Categoría: {producto_encontrado['categoria']}\n"
+            f"Precio: {producto_encontrado['precio']}\n"
+            f"Stock: {producto_encontrado['stock']}\n"
+            f"Ubicación: {producto_encontrado['ubicacion']}"
+        ))
+
+    tk.Button(ventana_buscar, command=buscar_por_id, text="BUSCAR", font=("Arial", 12)).pack()
+
+def gestionar_stock(es_entrada):
+    titulo = "ENTRADA DE MERCANCÍA" if es_entrada else "SALIDA DE MERCANCÍA"
+    ventana_stock = tk.Toplevel()
+    ventana_stock.title(titulo)
+    ventana_stock.geometry("400x250")
+
+    tk.Label(ventana_stock, text="ID DEL PRODUCTO", font=("Arial", 15)).pack()
+    entrada_id = tk.Entry(ventana_stock)
+    entrada_id.pack()
+
+    tk.Label(ventana_stock, text="CANTIDAD", font=("Arial", 15)).pack()
+    entrada_cantidad = tk.Entry(ventana_stock)
+    entrada_cantidad.pack()
+
+    def aplicar_movimiento():
+        id_producto = entrada_id.get().strip()
+        try:
+            cantidad = int(entrada_cantidad.get())
+        except ValueError:
+            messagebox.showerror("Cantidad inválida", "Ingresa una cantidad entera.", parent=ventana_stock)
+            return
+
+        if cantidad <= 0:
+            messagebox.showerror("Cantidad inválida", "La cantidad debe ser mayor que cero.", parent=ventana_stock)
+            return
+
+        producto = next((producto for producto in productos if producto["id"] == id_producto), None)
+        if producto is None:
+            messagebox.showerror("Producto no encontrado", "No existe un producto con ese ID.", parent=ventana_stock)
+            return
+
+        if not es_entrada and cantidad > producto["stock"]:
+            messagebox.showerror("Stock insuficiente", "No hay suficiente stock para realizar la salida.", parent=ventana_stock)
+            return
+
+        if es_entrada:
+            producto["stock"] += cantidad
+        else:
+            producto["stock"] -= cantidad
+
+        messagebox.showinfo(
+            "Stock actualizado",
+            f"Movimiento realizado. Stock actual: {producto['stock']}",
+            parent=ventana_stock
+        )
+        ventana_stock.destroy()
+
+    tk.Button(ventana_stock, command=aplicar_movimiento, text="APLICAR", font=("Arial", 12)).pack(pady=10)
 
 boton_registrar = tk.Button(ventana, command=registrar, text="Registrar producto", font=("Arial", 15)) #este apartado esta conectado con la funcion Registrar, ya que estamos utilizando el commant para que al momento de que le de clic al boton de registrar producto genere el mensaje
 boton_registrar.pack()
 
-boton_buscar = tk.Button(ventana, text="Buscar producto", font=("Arial", 15))
+boton_buscar = tk.Button(ventana, command=buscar_producto, text="Buscar producto", font=("Arial", 15))
 boton_buscar.pack()
 
-boton_mostrar = tk.Button(ventana, text="Mostrar productos", font=("Arial", 15))
+boton_mostrar = tk.Button(ventana, command=mostrar_productos, text="Mostrar productos", font=("Arial", 15))
 boton_mostrar.pack()
 
-boton_entrada = tk.Button(ventana, text="Entrada de mercancia", font=("Arial", 15))
+boton_entrada = tk.Button(ventana, command=lambda: gestionar_stock(True), text="Entrada de mercancia", font=("Arial", 15))
 boton_entrada.pack()
 
-boton_salida = tk.Button(ventana, text="Salida de mercancia", font=("Arial", 15))
+boton_salida = tk.Button(ventana, command=lambda: gestionar_stock(False), text="Salida de mercancia", font=("Arial", 15))
 boton_salida.pack()
 
 boton_actualizar = tk.Button(ventana, text="Actualizar producto", font=("Arial", 15))
