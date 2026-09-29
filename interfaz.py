@@ -3,18 +3,107 @@ from tkinter import messagebox
 
 ventana = tk.Tk() #Lo que hace esta linea es crear nuestra ventana principal
 
-ventana.title("ALMACEN RICHIE") #Coloca el titulo en la ventana 
+COLOR_FONDO = "#F1F5F3"
+COLOR_SUPERFICIE = "#FFFFFF"
+COLOR_TINTA = "#24312F"
+COLOR_SECUNDARIO = "#687773"
+COLOR_VERDE = "#14776D"
+COLOR_VERDE_HOVER = "#0F625A"
+COLOR_AMBAR = "#A95F16"
+COLOR_AMBAR_HOVER = "#874B10"
+COLOR_ROJO = "#A8443F"
+COLOR_ROJO_SUAVE = "#F8E9E7"
+COLOR_LINEA = "#D8E2DE"
+FUENTE = "Segoe UI"
 
-ventana.geometry("800x600")
+ventana.title("ALMACEN RICHIE") #Coloca el titulo en la ventana
+ventana.geometry("900x620")
+ventana.minsize(760, 560)
+ventana.configure(bg=COLOR_FONDO)
+ventana.option_add("*Font", f"{{{FUENTE}}} 10")
+ventana.option_add("*Label.background", COLOR_FONDO)
+ventana.option_add("*Label.foreground", COLOR_TINTA)
+ventana.option_add("*Entry.background", COLOR_SUPERFICIE)
+ventana.option_add("*Entry.foreground", COLOR_TINTA)
+ventana.option_add("*Entry.insertBackground", COLOR_VERDE)
+ventana.option_add("*Entry.relief", "flat")
+ventana.option_add("*Entry.highlightThickness", 1)
+ventana.option_add("*Entry.highlightBackground", COLOR_LINEA)
+ventana.option_add("*Entry.highlightColor", COLOR_VERDE)
+ventana.option_add("*Button.background", COLOR_SUPERFICIE)
+ventana.option_add("*Button.foreground", COLOR_TINTA)
+ventana.option_add("*Button.activeBackground", COLOR_FONDO)
+ventana.option_add("*Button.activeForeground", COLOR_TINTA)
+ventana.option_add("*Button.relief", "flat")
+ventana.option_add("*Button.borderWidth", 0)
 
 productos = []
+conteo_productos = tk.StringVar(value="0")
 
-titulo = tk.Label( #Aqui estamos controlando los detalles del titulo
-    ventana,
-    text="ALMACEN RICHIE",
-    font=("Arial", 24)
-)
-titulo.pack()
+def actualizar_conteo_productos():
+    conteo_productos.set(str(len(productos)))
+
+def configurar_ventana_secundaria(ventana_secundaria, titulo, geometria):
+    ventana_secundaria.title(titulo)
+    ventana_secundaria.geometry(geometria)
+    ventana_secundaria.configure(bg=COLOR_FONDO)
+
+def crear_boton(parent, texto, comando, fondo, texto_color=COLOR_SUPERFICIE, fondo_activo=None):
+    return tk.Button(
+        parent,
+        command=comando,
+        text=texto,
+        font=(FUENTE, 10, "bold"),
+        bg=fondo,
+        fg=texto_color,
+        activebackground=fondo_activo or fondo,
+        activeforeground=texto_color,
+        relief="flat",
+        borderwidth=0,
+        highlightthickness=0,
+        cursor="hand2",
+        padx=14,
+        pady=12,
+        height=1
+    )
+
+cabecera = tk.Frame(ventana, bg=COLOR_TINTA, padx=34, pady=22)
+cabecera.pack(fill="x")
+
+marca = tk.Frame(cabecera, bg=COLOR_TINTA)
+marca.pack(side="left")
+tk.Label(marca, text="ALMACEN", bg=COLOR_TINTA, fg="#94D4C7", font=(FUENTE, 9, "bold")).pack(anchor="w")
+tk.Label(marca, text="RICHIE", bg=COLOR_TINTA, fg=COLOR_SUPERFICIE, font=(FUENTE, 23, "bold")).pack(anchor="w")
+
+indicador = tk.Frame(cabecera, bg="#31534D", padx=18, pady=9)
+indicador.pack(side="right")
+tk.Label(indicador, text="PRODUCTOS", bg="#31534D", fg="#C4D8D1", font=(FUENTE, 8, "bold")).pack(anchor="e")
+tk.Label(indicador, textvariable=conteo_productos, bg="#31534D", fg=COLOR_SUPERFICIE, font=(FUENTE, 18, "bold")).pack(anchor="e")
+
+contenido = tk.Frame(ventana, bg=COLOR_FONDO, padx=34, pady=28)
+contenido.pack(fill="both", expand=True)
+tk.Label(contenido, text="Panel de control", bg=COLOR_FONDO, fg=COLOR_TINTA, font=(FUENTE, 19, "bold")).pack(anchor="w")
+
+secciones = tk.Frame(contenido, bg=COLOR_FONDO)
+secciones.pack(fill="both", expand=True, pady=(24, 18))
+secciones.columnconfigure(0, weight=3, uniform="secciones")
+secciones.columnconfigure(1, weight=2, uniform="secciones")
+
+acciones_productos = tk.Frame(secciones, bg=COLOR_FONDO)
+acciones_productos.grid(row=0, column=0, sticky="nsew", padx=(0, 26))
+acciones_stock = tk.Frame(secciones, bg=COLOR_FONDO)
+acciones_stock.grid(row=0, column=1, sticky="nsew", padx=(26, 0))
+
+for seccion, titulo_seccion, color_seccion in (
+    (acciones_productos, "PRODUCTOS", COLOR_VERDE),
+    (acciones_stock, "MOVIMIENTOS", COLOR_AMBAR)
+):
+    tk.Label(seccion, text=titulo_seccion, bg=COLOR_FONDO, fg=color_seccion, font=(FUENTE, 10, "bold")).pack(anchor="w")
+    tk.Frame(seccion, bg=COLOR_LINEA, height=1).pack(fill="x", pady=(9, 15))
+
+pie = tk.Frame(contenido, bg=COLOR_FONDO)
+pie.pack(fill="x")
+tk.Frame(pie, bg=COLOR_LINEA, height=1).pack(fill="x", pady=(0, 14))
 
 
 def registrar(): #Lo que hacemos aqui es crear una funcion para que al momento de precioar el boton nos aparezca el mensaje de registrar
