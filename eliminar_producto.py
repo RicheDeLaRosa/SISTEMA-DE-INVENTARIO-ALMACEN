@@ -1,41 +1,143 @@
 import tkinter as tk
 from tkinter import messagebox
 
-from ui_comun import COLOR_ROJO, FUENTE, configurar_ventana, crear_boton
+from ui_comun import (
+    COLOR_FONDO,
+    COLOR_LINEA,
+    COLOR_ROJO,
+    COLOR_SECUNDARIO,
+    COLOR_SUPERFICIE,
+    COLOR_TINTA,
+    FUENTE,
+    configurar_ventana,
+    crear_boton,
+)
 
 
 def abrir(parent, productos, actualizar_conteo):
     ventana = tk.Toplevel(parent)
-    configurar_ventana(ventana, parent, "Eliminar producto", "420x230")
-    ventana.minsize(380, 210)
+    configurar_ventana(ventana, parent, "Eliminar producto", "560x440")
+    ventana.minsize(480, 400)
 
-    tk.Label(ventana, text="ID DEL PRODUCTO", font=(FUENTE, 11, "bold")).pack(pady=(16, 4))
-    entrada_id = tk.Entry(ventana)
-    entrada_id.pack()
+    panel = tk.Frame(ventana, bg=COLOR_FONDO, padx=24, pady=20)
+    panel.pack(fill="both", expand=True)
+    tk.Label(
+        panel,
+        text="Eliminar producto",
+        bg=COLOR_FONDO,
+        fg=COLOR_TINTA,
+        font=(FUENTE, 20, "bold")
+    ).pack(anchor="w")
+    tk.Label(
+        panel,
+        text="Busca el artículo y revisa sus datos antes de eliminarlo",
+        bg=COLOR_FONDO,
+        fg=COLOR_SECUNDARIO,
+        font=(FUENTE, 10)
+    ).pack(anchor="w", pady=(3, 18))
+
+    barra_busqueda = tk.Frame(panel, bg=COLOR_FONDO)
+    barra_busqueda.pack(fill="x", pady=(0, 16))
+    tk.Label(
+        barra_busqueda,
+        text="ID DEL PRODUCTO",
+        bg=COLOR_FONDO,
+        fg=COLOR_TINTA,
+        font=(FUENTE, 9, "bold")
+    ).pack(side="left", padx=(0, 10))
+    id_producto = tk.StringVar()
+    entrada_id = tk.Entry(barra_busqueda, textvariable=id_producto, font=(FUENTE, 10))
+    entrada_id.pack(side="left", fill="x", expand=True, ipady=6)
+
+    ficha = tk.Frame(
+        panel,
+        bg=COLOR_SUPERFICIE,
+        padx=18,
+        pady=16,
+        highlightbackground=COLOR_LINEA,
+        highlightthickness=1
+    )
+    ficha.pack(fill="x", expand=True)
+    nombre_producto = tk.Label(
+        ficha,
+        text="Producto sin cargar",
+        bg=COLOR_SUPERFICIE,
+        fg=COLOR_SECUNDARIO,
+        font=(FUENTE, 15, "bold")
+    )
+    nombre_producto.pack(anchor="w")
+    detalle_producto = tk.Label(
+        ficha,
+        text="Busca un ID para mostrar los detalles.",
+        bg=COLOR_SUPERFICIE,
+        fg=COLOR_SECUNDARIO,
+        font=(FUENTE, 10),
+        justify="left"
+    )
+    detalle_producto.pack(anchor="w", pady=(8, 0))
+    estado = tk.Label(panel, text="", bg=COLOR_FONDO, fg=COLOR_SECUNDARIO, font=(FUENTE, 9))
+    estado.pack(anchor="w", pady=(10, 8))
+
+    producto_seleccionado = None
+
+    acciones = tk.Frame(panel, bg=COLOR_FONDO)
+    acciones.pack(fill="x", pady=(12, 0))
 
     def confirmar_eliminacion():
-        id_producto = entrada_id.get().strip()
-        if not id_producto:
-            messagebox.showerror("ID requerido", "Ingresa el ID del producto.", parent=ventana)
-            return
-
-        producto = next((producto for producto in productos if producto["id"] == id_producto), None)
-        if producto is None:
-            messagebox.showerror("Producto no encontrado", "No existe un producto con ese ID.", parent=ventana)
+        if producto_seleccionado is None:
             return
 
         confirmar = messagebox.askyesno(
             "Confirmar eliminación",
-            f"¿Deseas eliminar el producto '{producto['nombre']}'?",
+            f"¿Deseas eliminar el producto '{producto_seleccionado['nombre']}'?",
             parent=ventana
         )
         if not confirmar:
             return
 
-        productos.remove(producto)
+        productos.remove(producto_seleccionado)
         actualizar_conteo()
         messagebox.showinfo("Producto eliminado", "El producto se eliminó correctamente.", parent=ventana)
         ventana.destroy()
 
-    crear_boton(ventana, "Eliminar producto", confirmar_eliminacion, COLOR_ROJO).pack(pady=12)
+    def buscar_producto():
+        nonlocal producto_seleccionado
+        id_buscar = id_producto.get().strip()
+        producto_seleccionado = next(
+            (producto for producto in productos if producto["id"] == id_buscar),
+            None
+        )
+        if producto_seleccionado is None:
+            nombre_producto.config(text="Producto no encontrado", fg=COLOR_ROJO)
+            detalle_producto.config(text="Verifica el ID e intenta nuevamente.")
+            estado.config(text="No se encontró un producto con ese ID.", fg=COLOR_ROJO)
+            boton_eliminar.config(state="disabled")
+            return
+
+        nombre_producto.config(text=producto_seleccionado["nombre"], fg=COLOR_TINTA)
+        detalle_producto.config(text=(
+            f"ID: {producto_seleccionado['id']}\n"
+            f"Categoría: {producto_seleccionado['categoria']}\n"
+            f"Precio: {producto_seleccionado['precio']}    ·    "
+            f"Existencias: {producto_seleccionado['stock']}\n"
+            f"Ubicación: {producto_seleccionado['ubicacion']}"
+        ))
+        estado.config(text="Confirma que este es el artículo que deseas eliminar.", fg=COLOR_SECUNDARIO)
+        boton_eliminar.config(state="normal")
+
+    def invalidar_seleccion(*args):
+        nonlocal producto_seleccionado
+        producto_seleccionado = None
+        boton_eliminar.config(state="disabled")
+        nombre_producto.config(text="Producto sin cargar", fg=COLOR_SECUNDARIO)
+        detalle_producto.config(text="Busca un ID para mostrar los detalles.")
+        estado.config(text="")
+
+    crear_boton(barra_busqueda, "Buscar", buscar_producto, COLOR_TINTA).pack(side="left", padx=(8, 0))
+    crear_boton(acciones, "Cancelar", ventana.destroy, COLOR_SUPERFICIE, texto_color=COLOR_SECUNDARIO).pack(side="right", padx=(8, 0))
+    boton_eliminar = crear_boton(acciones, "Eliminar producto", confirmar_eliminacion, COLOR_ROJO)
+    boton_eliminar.config(state="disabled")
+    boton_eliminar.pack(side="right")
+    id_producto.trace_add("write", invalidar_seleccion)
+    entrada_id.bind("<Return>", lambda event: buscar_producto())
     entrada_id.focus_set()
