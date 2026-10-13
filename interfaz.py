@@ -1,24 +1,26 @@
 import tkinter as tk #Lo que hace esta linea es crear la interfaz grafica
 from tkinter import messagebox
+from tkinter import ttk
 
 ventana = tk.Tk() #Lo que hace esta linea es crear nuestra ventana principal
 
-COLOR_FONDO = "#F1F5F3"
+COLOR_FONDO = "#E6EEF2"
 COLOR_SUPERFICIE = "#FFFFFF"
-COLOR_TINTA = "#24312F"
-COLOR_SECUNDARIO = "#687773"
-COLOR_VERDE = "#14776D"
-COLOR_VERDE_HOVER = "#0F625A"
-COLOR_AMBAR = "#A95F16"
-COLOR_AMBAR_HOVER = "#874B10"
+COLOR_TINTA = "#263E49"
+COLOR_SECUNDARIO = "#718A94"
+COLOR_VERDE = "#19766F"
+COLOR_VERDE_HOVER = "#125F59"
+COLOR_AMBAR = "#A9682B"
+COLOR_AMBAR_HOVER = "#875321"
 COLOR_ROJO = "#A8443F"
 COLOR_ROJO_SUAVE = "#F8E9E7"
-COLOR_LINEA = "#D8E2DE"
+COLOR_LINEA = "#C9D7DD"
+COLOR_MARCA = "#1679A5"
 FUENTE = "Segoe UI"
 
 ventana.title("ALMACEN RICHIE") #Coloca el titulo en la ventana
-ventana.geometry("900x620")
-ventana.minsize(760, 560)
+ventana.geometry("940x700")
+ventana.minsize(760, 620)
 ventana.configure(bg=COLOR_FONDO)
 ventana.option_add("*Font", f"{{{FUENTE}}} 10")
 ventana.option_add("*Label.background", COLOR_FONDO)
@@ -67,76 +69,104 @@ def crear_boton(parent, texto, comando, fondo, texto_color=COLOR_SUPERFICIE, fon
         height=1
     )
 
-cabecera = tk.Frame(ventana, bg=COLOR_TINTA, padx=34, pady=22)
+cabecera = tk.Frame(ventana, bg=COLOR_SUPERFICIE, padx=26, pady=16)
 cabecera.pack(fill="x")
 
-marca = tk.Frame(cabecera, bg=COLOR_TINTA)
+fila_marca = tk.Frame(cabecera, bg=COLOR_SUPERFICIE)
+fila_marca.pack(fill="x")
+marca = tk.Frame(fila_marca, bg=COLOR_MARCA, padx=13, pady=7)
 marca.pack(side="left")
-tk.Label(marca, text="ALMACEN", bg=COLOR_TINTA, fg="#94D4C7", font=(FUENTE, 9, "bold")).pack(anchor="w")
-tk.Label(marca, text="RICHIE", bg=COLOR_TINTA, fg=COLOR_SUPERFICIE, font=(FUENTE, 23, "bold")).pack(anchor="w")
+tk.Label(marca, text="ALMACÉN", bg=COLOR_MARCA, fg=COLOR_SUPERFICIE, font=(FUENTE, 8, "bold")).pack(anchor="w")
+tk.Label(marca, text="RICHIE", bg=COLOR_MARCA, fg=COLOR_SUPERFICIE, font=(FUENTE, 17, "bold")).pack(anchor="w")
+tk.Label(
+    fila_marca,
+    text="CONTROL DE INVENTARIO",
+    bg=COLOR_SUPERFICIE,
+    fg=COLOR_MARCA,
+    font=(FUENTE, 10, "bold")
+).pack(side="left", padx=16)
 
-indicador = tk.Frame(cabecera, bg="#31534D", padx=18, pady=9)
+indicador = tk.Frame(fila_marca, bg=COLOR_SUPERFICIE, padx=8, pady=4)
 indicador.pack(side="right")
-tk.Label(indicador, text="PRODUCTOS", bg="#31534D", fg="#C4D8D1", font=(FUENTE, 8, "bold")).pack(anchor="e")
-tk.Label(indicador, textvariable=conteo_productos, bg="#31534D", fg=COLOR_SUPERFICIE, font=(FUENTE, 18, "bold")).pack(anchor="e")
+tk.Label(indicador, text="PRODUCTOS", bg=COLOR_SUPERFICIE, fg=COLOR_SECUNDARIO, font=(FUENTE, 8, "bold")).pack(anchor="e")
+tk.Label(indicador, textvariable=conteo_productos, bg=COLOR_SUPERFICIE, fg=COLOR_TINTA, font=(FUENTE, 20, "bold")).pack(anchor="e")
 
-contenido = tk.Frame(ventana, bg=COLOR_FONDO, padx=34, pady=28)
+barra_busqueda = tk.Frame(ventana, bg=COLOR_SUPERFICIE, padx=26)
+barra_busqueda.pack(fill="x", pady=(0, 0))
+contenedor_busqueda = tk.Frame(barra_busqueda, bg=COLOR_SUPERFICIE)
+contenedor_busqueda.pack(anchor="center", pady=(8, 18))
+busqueda_entry = tk.Entry(contenedor_busqueda, width=42, font=(FUENTE, 11))
+busqueda_entry.pack(side="left", ipady=7, padx=(0, 6))
+busqueda_entry.insert(0, "Buscar por ID o nombre")
+busqueda_entry.config(fg=COLOR_SECUNDARIO)
+
+def enfocar_busqueda(event):
+    if busqueda_entry.get() == "Buscar por ID o nombre":
+        busqueda_entry.delete(0, tk.END)
+        busqueda_entry.config(fg=COLOR_TINTA)
+
+def restaurar_busqueda(event):
+    if not busqueda_entry.get().strip():
+        busqueda_entry.insert(0, "Buscar por ID o nombre")
+        busqueda_entry.config(fg=COLOR_SECUNDARIO)
+
+busqueda_entry.bind("<FocusIn>", enfocar_busqueda)
+busqueda_entry.bind("<FocusOut>", restaurar_busqueda)
+busqueda_entry.bind("<Return>", lambda event: buscar_desde_panel())
+crear_boton(contenedor_busqueda, "Buscar", lambda: buscar_desde_panel(), COLOR_MARCA).pack(side="left")
+
+contenido = tk.Frame(ventana, bg=COLOR_FONDO, padx=26, pady=22)
 contenido.pack(fill="both", expand=True)
-tk.Label(contenido, text="Panel de control", bg=COLOR_FONDO, fg=COLOR_TINTA, font=(FUENTE, 19, "bold")).pack(anchor="w")
-
-secciones = tk.Frame(contenido, bg=COLOR_FONDO)
-secciones.pack(fill="both", expand=True, pady=(24, 18))
-secciones.columnconfigure(0, weight=3, uniform="secciones")
-secciones.columnconfigure(1, weight=2, uniform="secciones")
-
-acciones_productos = tk.Frame(secciones, bg=COLOR_FONDO)
-acciones_productos.grid(row=0, column=0, sticky="nsew", padx=(0, 26))
-acciones_stock = tk.Frame(secciones, bg=COLOR_FONDO)
-acciones_stock.grid(row=0, column=1, sticky="nsew", padx=(26, 0))
-
-for seccion, titulo_seccion, color_seccion in (
-    (acciones_productos, "PRODUCTOS", COLOR_VERDE),
-    (acciones_stock, "MOVIMIENTOS", COLOR_AMBAR)
-):
-    tk.Label(seccion, text=titulo_seccion, bg=COLOR_FONDO, fg=color_seccion, font=(FUENTE, 10, "bold")).pack(anchor="w")
-    tk.Frame(seccion, bg=COLOR_LINEA, height=1).pack(fill="x", pady=(9, 15))
+tk.Label(
+    contenido,
+    text="Módulos de inventario",
+    bg=COLOR_FONDO,
+    fg=COLOR_TINTA,
+    font=(FUENTE, 18, "bold")
+).pack(anchor="w", pady=(0, 12))
+rejilla_modulos = tk.Frame(contenido, bg=COLOR_FONDO)
+rejilla_modulos.pack(fill="both", expand=True)
+for columna in range(4):
+    rejilla_modulos.columnconfigure(columna, weight=1, uniform="modulos")
+for fila in range(2):
+    rejilla_modulos.rowconfigure(fila, weight=1, uniform="filas_modulos")
 
 pie = tk.Frame(contenido, bg=COLOR_FONDO)
 pie.pack(fill="x")
-tk.Frame(pie, bg=COLOR_LINEA, height=1).pack(fill="x", pady=(0, 14))
+tk.Frame(pie, bg=COLOR_LINEA, height=1).pack(fill="x", pady=(12, 12))
 
 
 def registrar(): #Lo que hacemos aqui es crear una funcion para que al momento de precioar el boton nos aparezca el mensaje de registrar
     ventana_registrar = tk.Toplevel() #Esta linea lo que hace es generar otra ventana al darle click en registrar producto
-    ventana_registrar.title("REGISTRAR PRODUCTO")
-    ventana_registrar.geometry("400x400")
+    configurar_ventana_secundaria(ventana_registrar, "Registrar producto", "440x520")
+    ventana_registrar.minsize(400, 460)
 
-    label_id = tk.Label(ventana_registrar, text="ID", font=("Arial", 15))
+    label_id = tk.Label(ventana_registrar, text="ID", font=(FUENTE, 11, "bold"))
     label_id.pack()
     label_id1 = tk.Entry(ventana_registrar)
     label_id1.pack()
 
-    nombre = tk.Label(ventana_registrar, text="INGRESA EL NOMBRE", font=("Arial", 15))
+    nombre = tk.Label(ventana_registrar, text="INGRESA EL NOMBRE", font=(FUENTE, 11, "bold"))
     nombre.pack()
     nombre1 = tk.Entry(ventana_registrar)
     nombre1.pack()
 
-    categoria = tk.Label(ventana_registrar, text="INGRESA LA CATEGORIA", font=("Arial", 15))
+    categoria = tk.Label(ventana_registrar, text="INGRESA LA CATEGORIA", font=(FUENTE, 11, "bold"))
     categoria.pack()
     categoria1 = tk.Entry(ventana_registrar)
     categoria1.pack()
 
-    precio = tk.Label(ventana_registrar, text="INGRESA EL PRECIO", font=("Arial", 15))
+    precio = tk.Label(ventana_registrar, text="INGRESA EL PRECIO", font=(FUENTE, 11, "bold"))
     precio.pack()
     precio1 = tk.Entry(ventana_registrar)
     precio1.pack()
 
-    stock = tk.Label(ventana_registrar, text="INGRESA EL STOCK", font=("Arial", 15))
+    stock = tk.Label(ventana_registrar, text="INGRESA EL STOCK", font=(FUENTE, 11, "bold"))
     stock.pack()
     stock1 = tk.Entry(ventana_registrar)
     stock1.pack()
 
-    ubicacion = tk.Label(ventana_registrar, text="INGRESA LA UBICACION", font=("Arial", 15))
+    ubicacion = tk.Label(ventana_registrar, text="INGRESA LA UBICACION", font=(FUENTE, 11, "bold"))
     ubicacion.pack()
     ubicacion1 = tk.Entry(ventana_registrar)
     ubicacion1.pack()
@@ -177,31 +207,97 @@ def registrar(): #Lo que hacemos aqui es crear una funcion para que al momento d
 }
 
         productos.append(producto) #Esta linea sirve para agregar el producto que acabo de crear a la lista de productos
+        actualizar_conteo_productos()
 
         messagebox.showinfo("Producto guardado", "El producto se registró correctamente.", parent=ventana_registrar)
         ventana_registrar.destroy()
-    guardar = tk.Button(ventana_registrar,command=guardar_producto, text="GUARDAR", font=("Arial", 15))
-    guardar.pack()
+    crear_boton(ventana_registrar, "Guardar producto", guardar_producto, COLOR_VERDE).pack(pady=12)
 
-def mostrar_productos():
+def mostrar_productos(productos_filtrados=None, titulo="Inventario de productos"):
+    lista_productos = productos if productos_filtrados is None else productos_filtrados
     ventana_mostrar = tk.Toplevel()
-    ventana_mostrar.title("MOSTRAR PRODUCTOS")
-    ventana_mostrar.geometry("400x400")
+    configurar_ventana_secundaria(ventana_mostrar, titulo, "820x440")
+    ventana_mostrar.minsize(680, 340)
 
-    for producto in productos: #esta linea significa, por cada producto que exisra dentro de la lista productos haz lo siguiente
-        texto = tk.Label(ventana_mostrar, text=producto)
-        texto.pack()
+    contenedor = tk.Frame(ventana_mostrar, bg=COLOR_FONDO, padx=24, pady=22)
+    contenedor.pack(fill="both", expand=True)
+    tk.Label(
+        contenedor,
+        text="Inventario de productos",
+        bg=COLOR_FONDO,
+        fg=COLOR_TINTA,
+        font=(FUENTE, 18, "bold")
+    ).pack(anchor="w", pady=(0, 14))
+    if not lista_productos:
+        tk.Label(
+            contenedor,
+            text="Aún no hay productos registrados." if productos_filtrados is None else "No se encontraron productos.",
+            bg=COLOR_FONDO,
+            fg=COLOR_SECUNDARIO,
+            font=(FUENTE, 10)
+        ).pack(anchor="w", pady=(0, 12))
+
+    estilo = ttk.Style(ventana_mostrar)
+    estilo.configure("Inventario.Treeview", rowheight=30, font=(FUENTE, 10))
+    estilo.configure("Inventario.Treeview.Heading", font=(FUENTE, 9, "bold"))
+    estilo.map("Inventario.Treeview", background=[("selected", COLOR_VERDE)])
+
+    columnas = ("id", "nombre", "categoria", "precio", "stock", "ubicacion")
+    tabla = ttk.Treeview(
+        contenedor,
+        columns=columnas,
+        show="headings",
+        style="Inventario.Treeview"
+    )
+    encabezados = {
+        "id": "ID",
+        "nombre": "Nombre",
+        "categoria": "Categoría",
+        "precio": "Precio",
+        "stock": "Stock",
+        "ubicacion": "Ubicación"
+    }
+    anchos = {"id": 80, "nombre": 170, "categoria": 130, "precio": 90, "stock": 80, "ubicacion": 130}
+    for columna in columnas:
+        tabla.heading(columna, text=encabezados[columna])
+        tabla.column(columna, width=anchos[columna], minwidth=60, anchor="w")
+    tabla.column("precio", anchor="e")
+    tabla.column("stock", anchor="center")
+
+    barra = ttk.Scrollbar(contenedor, orient="vertical", command=tabla.yview)
+    tabla.configure(yscrollcommand=barra.set)
+    tabla.pack(side="left", fill="both", expand=True)
+    barra.pack(side="right", fill="y")
+
+    for producto in lista_productos:
+        tabla.insert("", "end", values=tuple(producto[columna] for columna in columnas))
+
+def buscar_desde_panel():
+    consulta = busqueda_entry.get().strip()
+    if consulta == "Buscar por ID o nombre":
+        consulta = ""
+
+    if not consulta:
+        mostrar_productos()
+        return
+
+    consulta = consulta.casefold()
+    coincidencias = [
+        producto for producto in productos
+        if consulta in producto["id"].casefold() or consulta in producto["nombre"].casefold()
+    ]
+    mostrar_productos(coincidencias, "Resultados de búsqueda")
 
 def buscar_producto():
     ventana_buscar = tk.Toplevel()
-    ventana_buscar.title("BUSCAR PRODUCTO")
-    ventana_buscar.geometry("400x300")
+    configurar_ventana_secundaria(ventana_buscar, "Buscar producto", "440x320")
+    ventana_buscar.minsize(400, 280)
 
-    tk.Label(ventana_buscar, text="INGRESA EL ID DEL PRODUCTO", font=("Arial", 15)).pack()
+    tk.Label(ventana_buscar, text="INGRESA EL ID DEL PRODUCTO", font=(FUENTE, 11, "bold")).pack(pady=(18, 4))
     entrada_id = tk.Entry(ventana_buscar)
     entrada_id.pack()
-    resultado = tk.Label(ventana_buscar, text="", justify="left", font=("Arial", 12))
-    resultado.pack(pady=10)
+    resultado = tk.Label(ventana_buscar, text="", justify="left", font=(FUENTE, 10), bg=COLOR_SUPERFICIE, padx=12, pady=10)
+    resultado.pack(fill="x", padx=24, pady=12)
 
     def buscar_por_id():
         id_buscar = entrada_id.get().strip()
@@ -224,14 +320,14 @@ def buscar_producto():
             f"Ubicación: {producto_encontrado['ubicacion']}"
         ))
 
-    tk.Button(ventana_buscar, command=buscar_por_id, text="BUSCAR", font=("Arial", 12)).pack()
+    crear_boton(ventana_buscar, "Buscar", buscar_por_id, COLOR_VERDE).pack(pady=8)
 
 def actualizar_producto():
     ventana_actualizar = tk.Toplevel()
-    ventana_actualizar.title("ACTUALIZAR PRODUCTO")
-    ventana_actualizar.geometry("400x500")
+    configurar_ventana_secundaria(ventana_actualizar, "Actualizar producto", "460x540")
+    ventana_actualizar.minsize(420, 500)
 
-    tk.Label(ventana_actualizar, text="ID DEL PRODUCTO", font=("Arial", 15)).pack()
+    tk.Label(ventana_actualizar, text="ID DEL PRODUCTO", font=(FUENTE, 11, "bold")).pack(pady=(12, 4))
     entrada_id = tk.Entry(ventana_actualizar)
     entrada_id.pack()
 
@@ -243,7 +339,7 @@ def actualizar_producto():
         ("precio", "NUEVO PRECIO"),
         ("ubicacion", "NUEVA UBICACION")
     ):
-        tk.Label(ventana_actualizar, text=etiqueta, font=("Arial", 12)).pack()
+        tk.Label(ventana_actualizar, text=etiqueta, font=(FUENTE, 10, "bold")).pack(pady=(5, 2))
         campos[clave] = tk.Entry(ventana_actualizar)
         campos[clave].pack()
 
@@ -293,22 +389,17 @@ def actualizar_producto():
         messagebox.showinfo("Producto actualizado", "Los datos se actualizaron correctamente.", parent=ventana_actualizar)
         ventana_actualizar.destroy()
 
-    tk.Button(ventana_actualizar, command=cargar_producto, text="CARGAR PRODUCTO", font=("Arial", 12)).pack(pady=8)
-    boton_guardar = tk.Button(
-        ventana_actualizar,
-        command=guardar_cambios,
-        text="GUARDAR CAMBIOS",
-        font=("Arial", 12),
-        state="disabled"
-    )
+    crear_boton(ventana_actualizar, "Cargar producto", cargar_producto, COLOR_SUPERFICIE, texto_color=COLOR_TINTA).pack(pady=8)
+    boton_guardar = crear_boton(ventana_actualizar, "Guardar cambios", guardar_cambios, COLOR_VERDE)
+    boton_guardar.config(state="disabled")
     boton_guardar.pack()
 
 def eliminar_producto():
     ventana_eliminar = tk.Toplevel()
-    ventana_eliminar.title("ELIMINAR PRODUCTO")
-    ventana_eliminar.geometry("400x200")
+    configurar_ventana_secundaria(ventana_eliminar, "Eliminar producto", "420x230")
+    ventana_eliminar.minsize(380, 210)
 
-    tk.Label(ventana_eliminar, text="ID DEL PRODUCTO", font=("Arial", 15)).pack()
+    tk.Label(ventana_eliminar, text="ID DEL PRODUCTO", font=(FUENTE, 11, "bold")).pack(pady=(16, 4))
     entrada_id = tk.Entry(ventana_eliminar)
     entrada_id.pack()
 
@@ -333,22 +424,23 @@ def eliminar_producto():
             return
 
         productos.remove(producto)
+        actualizar_conteo_productos()
         messagebox.showinfo("Producto eliminado", "El producto se eliminó correctamente.", parent=ventana_eliminar)
         ventana_eliminar.destroy()
 
-    tk.Button(ventana_eliminar, command=confirmar_eliminacion, text="ELIMINAR", font=("Arial", 12)).pack(pady=10)
+    crear_boton(ventana_eliminar, "Eliminar producto", confirmar_eliminacion, COLOR_ROJO).pack(pady=12)
 
 def gestionar_stock(es_entrada):
     titulo = "ENTRADA DE MERCANCÍA" if es_entrada else "SALIDA DE MERCANCÍA"
     ventana_stock = tk.Toplevel()
-    ventana_stock.title(titulo)
-    ventana_stock.geometry("400x250")
+    configurar_ventana_secundaria(ventana_stock, titulo.title(), "420x300")
+    ventana_stock.minsize(380, 270)
 
-    tk.Label(ventana_stock, text="ID DEL PRODUCTO", font=("Arial", 15)).pack()
+    tk.Label(ventana_stock, text="ID DEL PRODUCTO", font=(FUENTE, 11, "bold")).pack(pady=(14, 4))
     entrada_id = tk.Entry(ventana_stock)
     entrada_id.pack()
 
-    tk.Label(ventana_stock, text="CANTIDAD", font=("Arial", 15)).pack()
+    tk.Label(ventana_stock, text="CANTIDAD", font=(FUENTE, 11, "bold")).pack(pady=(10, 4))
     entrada_cantidad = tk.Entry(ventana_stock)
     entrada_cantidad.pack()
 
@@ -389,30 +481,78 @@ def gestionar_stock(es_entrada):
         )
         ventana_stock.destroy()
 
-    tk.Button(ventana_stock, command=aplicar_movimiento, text="APLICAR", font=("Arial", 12)).pack(pady=10)
+    crear_boton(
+        ventana_stock,
+        "Aplicar entrada" if es_entrada else "Aplicar salida",
+        aplicar_movimiento,
+        COLOR_VERDE if es_entrada else COLOR_AMBAR,
+        fondo_activo=COLOR_VERDE_HOVER if es_entrada else COLOR_AMBAR_HOVER
+    ).pack(pady=12)
 
-boton_registrar = tk.Button(ventana, command=registrar, text="Registrar producto", font=("Arial", 15)) #este apartado esta conectado con la funcion Registrar, ya que estamos utilizando el commant para que al momento de que le de clic al boton de registrar producto genere el mensaje
-boton_registrar.pack()
+def crear_mosaico(parent, icono, texto, comando, color_icono):
+    mosaico = tk.Frame(
+        parent,
+        bg=COLOR_SUPERFICIE,
+        highlightbackground=COLOR_LINEA,
+        highlightthickness=1,
+        width=190,
+        height=150
+    )
+    mosaico.grid_propagate(False)
+    icono_label = tk.Label(
+        mosaico,
+        text=icono,
+        bg=COLOR_SUPERFICIE,
+        fg=color_icono,
+        font=("Segoe UI Symbol", 34)
+    )
+    icono_label.pack(expand=True, pady=(12, 0))
+    texto_label = tk.Label(
+        mosaico,
+        text=texto.upper(),
+        bg=COLOR_SUPERFICIE,
+        fg=COLOR_SECUNDARIO,
+        font=(FUENTE, 9, "bold"),
+        wraplength=160,
+        justify="center"
+    )
+    texto_label.pack(pady=(0, 14))
 
-boton_buscar = tk.Button(ventana, command=buscar_producto, text="Buscar producto", font=("Arial", 15))
-boton_buscar.pack()
+    componentes = (mosaico, icono_label, texto_label)
+    for componente in componentes:
+        componente.config(cursor="hand2")
+        componente.bind("<Button-1>", lambda event, accion=comando: accion())
+        componente.bind(
+            "<Enter>",
+            lambda event, elementos=componentes: [elemento.config(bg="#F8FBFC") for elemento in elementos]
+        )
+        componente.bind(
+            "<Leave>",
+            lambda event, elementos=componentes: [elemento.config(bg=COLOR_SUPERFICIE) for elemento in elementos]
+        )
+    return mosaico
 
-boton_mostrar = tk.Button(ventana, command=mostrar_productos, text="Mostrar productos", font=("Arial", 15))
-boton_mostrar.pack()
+modulos = (
+    ("＋", "Registrar producto", registrar, COLOR_VERDE),
+    ("▤", "Inventario", mostrar_productos, COLOR_MARCA),
+    ("⌕", "Buscar producto", buscar_producto, COLOR_MARCA),
+    ("↻", "Actualizar producto", actualizar_producto, COLOR_VERDE),
+    ("×", "Eliminar producto", eliminar_producto, COLOR_ROJO),
+    ("↑", "Entrada de mercancía", lambda: gestionar_stock(True), COLOR_VERDE),
+    ("↓", "Salida de mercancía", lambda: gestionar_stock(False), COLOR_AMBAR)
+)
 
-boton_entrada = tk.Button(ventana, command=lambda: gestionar_stock(True), text="Entrada de mercancia", font=("Arial", 15))
-boton_entrada.pack()
+for indice, (icono, texto, comando, color_icono) in enumerate(modulos):
+    mosaico = crear_mosaico(rejilla_modulos, icono, texto, comando, color_icono)
+    mosaico.grid(row=indice // 4, column=indice % 4, sticky="nsew", padx=7, pady=7)
 
-boton_salida = tk.Button(ventana, command=lambda: gestionar_stock(False), text="Salida de mercancia", font=("Arial", 15))
-boton_salida.pack()
-
-boton_actualizar = tk.Button(ventana, command=actualizar_producto, text="Actualizar producto", font=("Arial", 15))
-boton_actualizar.pack()
-
-boton_eliminar = tk.Button(ventana, command=eliminar_producto, text="Eliminar producto", font=("Arial", 15))
-boton_eliminar.pack()
-
-boton_salir = tk.Button(ventana, command=ventana.destroy, text="Salir", font=("Arial", 15))
-boton_salir.pack()
+tk.Label(
+    pie,
+    text="Sistema listo",
+    bg=COLOR_FONDO,
+    fg=COLOR_SECUNDARIO,
+    font=(FUENTE, 9)
+).pack(side="left")
+crear_boton(pie, "Salir", ventana.destroy, COLOR_SUPERFICIE, texto_color=COLOR_SECUNDARIO).pack(side="right")
 
 ventana.mainloop()
