@@ -23,6 +23,7 @@ from ui_comun import (
 
 
 def crear_mosaico(parent, icono, texto, comando, color_icono):
+    """Construye una tarjeta de navegación reutilizable para cada módulo."""
     mosaico = tk.Frame(
         parent,
         bg=COLOR_SUPERFICIE,
@@ -67,6 +68,7 @@ def crear_mosaico(parent, icono, texto, comando, color_icono):
 
 
 def main():
+    """Configura la ventana principal y conecta los módulos de inventario."""
     ventana = tk.Tk()
     ventana.title("ALMACEN RICHIE")
     ventana.geometry("940x700")
@@ -89,6 +91,7 @@ def main():
     ventana.option_add("*Button.relief", "flat")
     ventana.option_add("*Button.borderWidth", 0)
 
+    # La lista se comparte con los formularios y funciona como almacenamiento en memoria.
     productos = []
     conteo_productos = tk.StringVar(value="0")
 
@@ -136,6 +139,7 @@ def main():
             busqueda_entry.config(fg=COLOR_SECUNDARIO)
 
     def buscar_desde_panel():
+        # Desde el inicio se puede abrir el inventario completo o solo coincidencias.
         consulta = busqueda_entry.get().strip()
         if consulta == "Buscar por ID o nombre":
             consulta = ""
@@ -171,6 +175,7 @@ def main():
     for fila in range(2):
         rejilla_modulos.rowconfigure(fila, weight=1, uniform="filas_modulos")
 
+    # Cada tarjeta enlaza una acción con el mismo inventario compartido.
     modulos = (
         ("＋", "Registrar producto", lambda: registrar_producto.abrir(ventana, productos, actualizar_conteo), COLOR_VERDE),
         ("▤", "Inventario", lambda: inventario.abrir(ventana, productos), COLOR_MARCA),

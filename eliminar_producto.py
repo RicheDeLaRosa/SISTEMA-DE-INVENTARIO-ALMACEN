@@ -15,6 +15,7 @@ from ui_comun import (
 
 
 def abrir(parent, productos, actualizar_conteo):
+    """Permite revisar un producto y confirmar su eliminación del inventario."""
     ventana = tk.Toplevel(parent)
     configurar_ventana(ventana, parent, "Eliminar producto", "560x440")
     ventana.minsize(480, 400)
@@ -84,6 +85,7 @@ def abrir(parent, productos, actualizar_conteo):
     acciones.pack(fill="x", pady=(12, 0))
 
     def confirmar_eliminacion():
+        # Solicita confirmación antes de retirar definitivamente el registro.
         if producto_seleccionado is None:
             return
 
@@ -101,6 +103,7 @@ def abrir(parent, productos, actualizar_conteo):
         ventana.destroy()
 
     def buscar_producto():
+        # Carga la ficha y habilita la eliminación solo si encuentra el ID.
         nonlocal producto_seleccionado
         id_buscar = id_producto.get().strip()
         producto_seleccionado = next(
@@ -126,6 +129,7 @@ def abrir(parent, productos, actualizar_conteo):
         boton_eliminar.config(state="normal")
 
     def invalidar_seleccion(*args):
+        # Si cambia el ID, obliga a buscar de nuevo antes de permitir eliminar.
         nonlocal producto_seleccionado
         producto_seleccionado = None
         boton_eliminar.config(state="disabled")

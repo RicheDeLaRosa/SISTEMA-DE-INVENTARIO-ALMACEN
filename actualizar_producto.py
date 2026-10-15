@@ -14,6 +14,7 @@ from ui_comun import (
 
 
 def abrir(parent, productos):
+    """Permite cargar un producto por ID y editar sus datos descriptivos."""
     ventana = tk.Toplevel(parent)
     configurar_ventana(ventana, parent, "Actualizar producto", "620x570")
     ventana.minsize(540, 500)
@@ -83,6 +84,7 @@ def abrir(parent, productos):
     estado.pack(anchor="w", pady=(0, 12))
 
     def cargar_producto():
+        # El formulario se habilita únicamente cuando el ID corresponde a un producto.
         nonlocal producto_seleccionado
         producto_seleccionado = next(
             (producto for producto in productos if producto["id"] == entrada_id.get().strip()),
@@ -109,6 +111,7 @@ def abrir(parent, productos):
         boton_guardar.config(state="normal")
 
     def guardar_cambios():
+        # Valida los campos y actualiza solo los datos editables, no las existencias.
         if producto_seleccionado is None:
             return
 

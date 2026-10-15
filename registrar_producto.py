@@ -5,6 +5,7 @@ from ui_comun import COLOR_FONDO, COLOR_SUPERFICIE, COLOR_TINTA, COLOR_SECUNDARI
 
 
 def abrir(parent, productos, actualizar_conteo):
+    """Muestra el formulario para validar y agregar un producto al inventario."""
     ventana = tk.Toplevel(parent)
     configurar_ventana(ventana, parent, "Registrar producto", "560x520")
     ventana.minsize(500, 480)
@@ -33,6 +34,7 @@ def abrir(parent, productos, actualizar_conteo):
     campos = {}
 
     def crear_campo(clave, etiqueta, fila, columna):
+        # Guarda cada Entry por clave para leerlo después al confirmar el registro.
         grupo = tk.Frame(formulario, bg=COLOR_SUPERFICIE)
         grupo.grid(row=fila, column=columna, sticky="ew", padx=(0, 12) if columna == 0 else (0, 0), pady=(0, 14))
         tk.Label(
@@ -54,6 +56,7 @@ def abrir(parent, productos, actualizar_conteo):
     crear_campo("ubicacion", "UBICACIÓN", 2, 1)
 
     def guardar_producto():
+        # Comprueba integridad y tipos antes de insertar el producto en la lista.
         id_producto = campos["id"].get().strip()
         nombre_producto = campos["nombre"].get().strip()
         categoria_producto = campos["categoria"].get().strip()

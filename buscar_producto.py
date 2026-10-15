@@ -17,6 +17,7 @@ from ui_comun import (
 
 
 def abrir(parent, productos):
+    """Abre la búsqueda y muestra coincidencias en una tabla filtrable."""
     ventana = tk.Toplevel(parent)
     configurar_ventana(ventana, parent, "Buscar producto", "960x600")
     ventana.minsize(740, 460)
@@ -98,6 +99,7 @@ def abrir(parent, productos):
     estado.pack(anchor="w", pady=(9, 0))
 
     def buscar():
+        # Actualiza la tabla con coincidencias parciales por ID o nombre.
         consulta = entrada.get().strip()
         if consulta == "ID o nombre del producto":
             consulta = ""
@@ -123,6 +125,7 @@ def abrir(parent, productos):
         estado.config(text=f"{len(coincidencias)} productos encontrados")
 
     def limpiar_busqueda():
+        # Restaura el listado completo y deja el cursor listo para otra consulta.
         entrada.delete(0, tk.END)
         entrada.config(fg=COLOR_TINTA)
         buscar()

@@ -1,5 +1,6 @@
 import tkinter as tk
 
+# Paleta y tipografía compartidas para mantener una apariencia uniforme.
 COLOR_FONDO = "#E6EEF2"
 COLOR_SUPERFICIE = "#FFFFFF"
 COLOR_TINTA = "#263E49"
@@ -15,6 +16,7 @@ FUENTE = "Segoe UI"
 
 
 def configurar_ventana(ventana, parent, titulo, geometria):
+    """Aplica las opciones comunes a una ventana principal o secundaria."""
     ventana.title(titulo)
     ventana.geometry(geometria)
     ventana.configure(bg=COLOR_FONDO)
@@ -23,6 +25,7 @@ def configurar_ventana(ventana, parent, titulo, geometria):
 
 
 def crear_boton(parent, texto, comando, fondo, texto_color=COLOR_SUPERFICIE, fondo_activo=None):
+    """Crea un botón plano con colores y espaciado consistentes en toda la app."""
     return tk.Button(
         parent,
         command=comando,

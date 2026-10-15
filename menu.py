@@ -1,4 +1,5 @@
-#SISTEMA DE ALMACEN
+# Menú de consola alternativo para administrar productos durante la ejecución.
+# Los cambios se guardan en memoria y se pierden al cerrar el programa.
 
 productos = []
 
@@ -6,6 +7,7 @@ opcion = ""
 
 print("---------ALMACEN RICHIE-----------")
 
+# Repite las opciones hasta que se elija salir.
 while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro del ciclo while, lo que hace que se repita infinitamente hasta que el usuario intruduzca la opcion de salir
     print("1. Registrar producto ") #Lo que hace aqui es mostrar el menu
     print("2. Mostrar productos ")
@@ -18,6 +20,7 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
 
     opcion = input("Selecciona una opcion: ") #Aqui estamos declarando una variable la cual se llama opcion. lo que hace es que al momento de que el usuario inigrese su respuesta se almacena en opcion
 
+    # Cada rama ejecuta una operación distinta sobre la lista compartida.
     if opcion == "1": #Estas son las opciones que estan disponibles 
 
         print("REGISTRA EL PRODUCTO")

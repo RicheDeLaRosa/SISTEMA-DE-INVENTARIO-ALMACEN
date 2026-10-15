@@ -18,9 +18,11 @@ from ui_comun import (
 
 
 def abrir(parent, productos, es_entrada):
+    """Abre el formulario de entrada o salida y actualiza el stock al confirmar."""
     titulo = "ENTRADA DE MERCANCÍA" if es_entrada else "SALIDA DE MERCANCÍA"
     ventana = tk.Toplevel(parent)
     if es_entrada:
+        # La entrada usa verde para comunicar visualmente que las existencias aumentarán.
         configurar_ventana(ventana, parent, titulo.title(), "560x620")
         ventana.minsize(500, 580)
 
@@ -146,6 +148,7 @@ def abrir(parent, productos, es_entrada):
             font=(FUENTE, 9),
         ).pack(anchor="w", pady=(5, 0))
 
+        # Actualiza el nombre y calcula el stock esperado mientras se completa la entrada.
         def actualizar_vista_previa(event=None):
             id_producto = entrada_id.get().strip()
             producto = next((item for item in productos if item["id"] == id_producto), None)
@@ -180,6 +183,7 @@ def abrir(parent, productos, es_entrada):
         entrada_cantidad.bind("<Return>", lambda event: aplicar_movimiento())
         ventana.bind("<Escape>", lambda event: ventana.destroy())
     else:
+        # La salida usa ámbar y presenta el stock restante antes de confirmar el retiro.
         configurar_ventana(ventana, parent, titulo.title(), "560x620")
         ventana.minsize(500, 580)
 
@@ -308,6 +312,7 @@ def abrir(parent, productos, es_entrada):
         )
         mensaje_cantidad_label.pack(anchor="w", pady=(5, 0))
 
+        # Valida la disponibilidad y anticipa el resultado de descontar la cantidad.
         def actualizar_vista_previa(event=None):
             id_producto = entrada_id.get().strip()
             producto = next((item for item in productos if item["id"] == id_producto), None)
@@ -334,12 +339,14 @@ def abrir(parent, productos, es_entrada):
                 cantidad = 0
 
             if cantidad <= 0:
+                # No muestra un resultado ni permite confirmar cantidades inválidas.
                 stock_nuevo.set("—")
                 mensaje_cantidad.set("Ingresa un número entero mayor que cero.")
                 mensaje_cantidad_label.config(fg=COLOR_SECUNDARIO)
                 etiqueta_stock_nuevo.config(fg=COLOR_AMBAR)
                 boton_aplicar.config(state="disabled")
             elif cantidad > stock:
+                # Advierte antes de aplicar cuando el retiro supera las existencias.
                 stock_nuevo.set("Insuficiente")
                 mensaje_cantidad.set(f"Stock insuficiente: solo hay {stock} unidades disponibles.")
                 mensaje_cantidad_label.config(fg=COLOR_ROJO)
@@ -358,6 +365,7 @@ def abrir(parent, productos, es_entrada):
         entrada_cantidad.bind("<Return>", lambda event: aplicar_movimiento())
         ventana.bind("<Escape>", lambda event: ventana.destroy())
 
+    # Valida los datos y modifica el stock solo cuando el movimiento es válido.
     def aplicar_movimiento():
         id_producto = entrada_id.get().strip()
         try:
@@ -375,10 +383,12 @@ def abrir(parent, productos, es_entrada):
             messagebox.showerror("Producto no encontrado", "No existe un producto con ese ID.", parent=ventana)
             return
 
+        # Se repite la validación de stock al confirmar para proteger la operación.
         if not es_entrada and cantidad > producto["stock"]:
             messagebox.showerror("Stock insuficiente", "No hay suficiente stock para realizar la salida.", parent=ventana)
             return
 
+        # El signo del cambio depende del tipo de movimiento seleccionado.
         if es_entrada:
             producto["stock"] += cantidad
         else:
@@ -391,6 +401,7 @@ def abrir(parent, productos, es_entrada):
         )
         ventana.destroy()
 
+    # El botón principal queda deshabilitado hasta tener un producto y una cantidad válidos.
     if es_entrada:
         acciones = tk.Frame(panel, bg=COLOR_SUPERFICIE, padx=26, pady=12)
         acciones.pack(fill="x", side="bottom")

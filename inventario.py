@@ -16,6 +16,7 @@ from ui_comun import (
 
 
 def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
+    """Muestra existencias, indicadores y herramientas de filtro y ordenamiento."""
     ventana = tk.Toplevel(parent)
     configurar_ventana(ventana, parent, titulo, "1040x620")
     ventana.minsize(760, 500)
@@ -91,6 +92,7 @@ def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
     orden = {columna: False for columna in columnas}
 
     def ordenar(columna):
+        # Alterna ascendente/descendente y trata los valores numéricos como números.
         items = [(tabla.set(item, columna), item) for item in tabla.get_children("")]
         try:
             items.sort(key=lambda elemento: float(elemento[0]), reverse=orden[columna])
@@ -136,6 +138,7 @@ def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
     estado.pack(anchor="w", pady=(9, 0))
 
     def refrescar_tabla(*args):
+        # Vuelve a calcular filas e indicadores usando el filtro activo.
         lista_productos = list(productos if productos_filtrados is None else productos_filtrados)
         consulta = entrada_filtro.get().strip().casefold()
         if consulta == "id, nombre, categoría o ubicación":
@@ -163,6 +166,7 @@ def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
         estado.config(text=f"Mostrando {len(filas)} de {len(lista_productos)} productos  ·  En rojo: sin existencias")
 
     def limpiar_filtro():
+        # Quita el texto de búsqueda y reconstruye la vista sin restricciones.
         entrada_filtro.delete(0, tk.END)
         entrada_filtro.config(fg=COLOR_TINTA)
         refrescar_tabla()
