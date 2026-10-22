@@ -1,10 +1,12 @@
 import tkinter as tk
+import sqlite3
 from tkinter import messagebox
 
+from base_datos import BaseDatosInventario
 from ui_comun import COLOR_FONDO, COLOR_SUPERFICIE, COLOR_TINTA, COLOR_SECUNDARIO, COLOR_VERDE, FUENTE, configurar_ventana, crear_boton
 
 
-def abrir(parent, productos, actualizar_conteo):
+def abrir(parent, productos, actualizar_conteo, base_datos: BaseDatosInventario):
     """Muestra el formulario para validar y agregar un producto al inventario."""
     ventana = tk.Toplevel(parent)
     configurar_ventana(ventana, parent, "Registrar producto", "560x520")
@@ -78,14 +80,25 @@ def abrir(parent, productos, actualizar_conteo):
             messagebox.showerror("Dato inválido", "El precio y el stock deben ser números enteros.", parent=ventana)
             return
 
-        productos.append({
+        producto = {
             "id": id_producto,
             "nombre": nombre_producto,
             "categoria": categoria_producto,
             "precio": precio_producto,
             "stock": stock_producto,
             "ubicacion": ubicacion_producto
-        })
+        }
+        try:
+            base_datos.registrar_producto(producto)
+        except sqlite3.Error as error:
+            messagebox.showerror(
+                "Error de base de datos",
+                f"No se pudo guardar el producto.\n\n{error}",
+                parent=ventana
+            )
+            return
+
+        productos.append(producto)
         actualizar_conteo()
         messagebox.showinfo("Producto guardado", "El producto se registró correctamente.", parent=ventana)
         ventana.destroy()

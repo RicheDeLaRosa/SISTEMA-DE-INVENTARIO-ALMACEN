@@ -1,6 +1,8 @@
 import tkinter as tk
+import sqlite3
 from tkinter import messagebox
 
+from base_datos import BaseDatosInventario
 from ui_comun import (
     COLOR_FONDO,
     COLOR_SECUNDARIO,
@@ -13,7 +15,7 @@ from ui_comun import (
 )
 
 
-def abrir(parent, productos):
+def abrir(parent, productos, base_datos: BaseDatosInventario):
     """Permite cargar un producto por ID y editar sus datos descriptivos."""
     ventana = tk.Toplevel(parent)
     configurar_ventana(ventana, parent, "Actualizar producto", "620x570")
@@ -126,12 +128,24 @@ def abrir(parent, productos):
             messagebox.showerror("Precio inválido", "El precio debe ser un número entero.", parent=ventana)
             return
 
-        producto_seleccionado.update({
+        cambios = {
             "nombre": valores["nombre"],
             "categoria": valores["categoria"],
             "precio": precio_nuevo,
             "ubicacion": valores["ubicacion"]
-        })
+        }
+        producto_actualizado = {**producto_seleccionado, **cambios}
+        try:
+            base_datos.actualizar_producto(producto_actualizado)
+        except (sqlite3.Error, ValueError) as error:
+            messagebox.showerror(
+                "Error de base de datos",
+                f"No se pudieron guardar los cambios.\n\n{error}",
+                parent=ventana
+            )
+            return
+
+        producto_seleccionado.update(cambios)
         messagebox.showinfo("Producto actualizado", "Los datos se actualizaron correctamente.", parent=ventana)
         ventana.destroy()
 

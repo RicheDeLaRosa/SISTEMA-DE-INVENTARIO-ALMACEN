@@ -1,7 +1,16 @@
 # Menú de consola alternativo para administrar productos durante la ejecución.
-# Los cambios se guardan en memoria y se pierden al cerrar el programa.
+import sqlite3
 
-productos = []
+from base_datos import BaseDatosInventario
+
+
+base_datos = BaseDatosInventario()
+try:
+    base_datos.inicializar()
+    productos = base_datos.listar_productos()
+except (sqlite3.Error, OSError) as error:
+    print(f"NO SE PUDO ABRIR LA BASE DE DATOS: {error}")
+    raise SystemExit(1)
 
 opcion = ""
 
@@ -39,14 +48,20 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
             stock = int(input("Ingrese el stock: "))
             ubicacion = input("Ingrese la ubicacion: ")
 
-            productos.append({
+            producto = {
                 "id": id,
                 "nombre": nombre,
                 "categoria": categoria,
                 "precio": precio,
                 "stock": stock,
                 "ubicacion": ubicacion,
-        })
+            }
+            try:
+                base_datos.registrar_producto(producto)
+            except sqlite3.Error as error:
+                print(f"NO SE PUDO GUARDAR EL PRODUCTO: {error}")
+            else:
+                productos.append(producto)
         else:
             print("EL ID YA EXISTE")
 
@@ -90,8 +105,14 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
 
                 cantidad = int(input("¿CUANTAS UNIDADES VAN A ENTRAR? "))
                 if cantidad > 0:
-                    producto["stock"] = producto["stock"] + cantidad #Lo que hace este apartado es hacer la operacion que va a SUMAR la cantidad que va entrar con el stock que ya hay
-                    print(producto)
+                    stock_nuevo = producto["stock"] + cantidad
+                    try:
+                        base_datos.actualizar_stock(producto["id"], stock_nuevo)
+                    except (sqlite3.Error, ValueError) as error:
+                        print(f"NO SE PUDO ACTUALIZAR EL STOCK: {error}")
+                    else:
+                        producto["stock"] = stock_nuevo # Suma las unidades recibidas al stock actual.
+                        print(producto)
                 else:
                     print("NO SE PUEDEN AGREGAR NUMEROS NEGATIVOS")
 
@@ -109,8 +130,14 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
                 cantidad = int(input("¿CUANTAS UNIDADES VAN A SALIR? "))
                 if cantidad > 0:
                     if cantidad <= producto["stock"]:
-                        producto["stock"] = producto["stock"] - cantidad #Lo que hace este apartado es la operacion que va a RESTAR la cantidad que va a salir con el stock que ya hay
-                        print(producto) #Si hay suficiente stock para salir muestra los datos del producto
+                        stock_nuevo = producto["stock"] - cantidad
+                        try:
+                            base_datos.actualizar_stock(producto["id"], stock_nuevo)
+                        except (sqlite3.Error, ValueError) as error:
+                            print(f"NO SE PUDO ACTUALIZAR EL STOCK: {error}")
+                        else:
+                            producto["stock"] = stock_nuevo # Resta las unidades retiradas del stock actual.
+                            print(producto) #Si hay suficiente stock para salir muestra los datos del producto
                     else:
                         print("NO HAY SUFICIENTE STOCK PARA SALIR") #De lo contrario si no hay suficiente stock para salir mmuestra este mensaje
 
@@ -133,12 +160,20 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
                 nuevo_categoria = (input("Ingrese la nueva categoria: "))
                 nuevo_ubicacion = (input("Ingrese la nueva ubicacion: "))
 
-                producto["precio"] = nuevo_precio #Aqui estamos modificando el diccionario para que el nuevo precio remplaze el precio anterior
-                producto["nombre"] = nuevo_nombre
-                producto["categoria"] = nuevo_categoria
-                producto["ubicacion"] = nuevo_ubicacion
-
-                print(producto)
+                producto_actualizado = {
+                    **producto,
+                    "precio": nuevo_precio,
+                    "nombre": nuevo_nombre,
+                    "categoria": nuevo_categoria,
+                    "ubicacion": nuevo_ubicacion,
+                }
+                try:
+                    base_datos.actualizar_producto(producto_actualizado)
+                except (sqlite3.Error, ValueError) as error:
+                    print(f"NO SE PUDO ACTUALIZAR EL PRODUCTO: {error}")
+                else:
+                    producto.update(producto_actualizado)
+                    print(producto)
 
         if encontrado == False:
             print("PRODUCTO NO ENCONTRADO")
@@ -151,7 +186,12 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
         for producto in productos:
             if id_eliminar == producto["id"]:
                 encontrado = True
-                productos.remove(producto)
+                try:
+                    base_datos.eliminar_producto(producto["id"])
+                except (sqlite3.Error, ValueError) as error:
+                    print(f"NO SE PUDO ELIMINAR EL PRODUCTO: {error}")
+                else:
+                    productos.remove(producto)
 
         if encontrado == False:
             print("PRODUCTO NO ENCONTRADO")

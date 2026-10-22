@@ -1,4 +1,6 @@
 import tkinter as tk
+import sqlite3
+from tkinter import messagebox
 
 import actualizar_producto
 import buscar_producto
@@ -7,6 +9,7 @@ import entrada_mercancia
 import inventario
 import registrar_producto
 import salida_mercancia
+from base_datos import BaseDatosInventario
 from ui_comun import (
     COLOR_AMBAR,
     COLOR_FONDO,
@@ -91,8 +94,20 @@ def main():
     ventana.option_add("*Button.relief", "flat")
     ventana.option_add("*Button.borderWidth", 0)
 
-    # La lista se comparte con los formularios y funciona como almacenamiento en memoria.
-    productos = []
+    base_datos = BaseDatosInventario()
+    try:
+        base_datos.inicializar()
+        productos = base_datos.listar_productos()
+    except (sqlite3.Error, OSError) as error:
+        messagebox.showerror(
+            "Error de base de datos",
+            f"No se pudo iniciar el inventario.\n\n{error}",
+            parent=ventana
+        )
+        ventana.destroy()
+        return
+
+    # La lista compartida mantiene sincronizada la interfaz con la base de datos.
     conteo_productos = tk.StringVar(value="0")
 
     def actualizar_conteo():
@@ -177,13 +192,13 @@ def main():
 
     # Cada tarjeta enlaza una acción con el mismo inventario compartido.
     modulos = (
-        ("＋", "Registrar producto", lambda: registrar_producto.abrir(ventana, productos, actualizar_conteo), COLOR_VERDE),
+        ("＋", "Registrar producto", lambda: registrar_producto.abrir(ventana, productos, actualizar_conteo, base_datos), COLOR_VERDE),
         ("▤", "Inventario", lambda: inventario.abrir(ventana, productos), COLOR_MARCA),
         ("⌕", "Buscar producto", lambda: buscar_producto.abrir(ventana, productos), COLOR_MARCA),
-        ("↻", "Actualizar producto", lambda: actualizar_producto.abrir(ventana, productos), COLOR_VERDE),
-        ("×", "Eliminar producto", lambda: eliminar_producto.abrir(ventana, productos, actualizar_conteo), COLOR_ROJO),
-        ("↑", "Entrada de mercancía", lambda: entrada_mercancia.abrir(ventana, productos), COLOR_VERDE),
-        ("↓", "Salida de mercancía", lambda: salida_mercancia.abrir(ventana, productos), COLOR_AMBAR)
+        ("↻", "Actualizar producto", lambda: actualizar_producto.abrir(ventana, productos, base_datos), COLOR_VERDE),
+        ("×", "Eliminar producto", lambda: eliminar_producto.abrir(ventana, productos, actualizar_conteo, base_datos), COLOR_ROJO),
+        ("↑", "Entrada de mercancía", lambda: entrada_mercancia.abrir(ventana, productos, base_datos), COLOR_VERDE),
+        ("↓", "Salida de mercancía", lambda: salida_mercancia.abrir(ventana, productos, base_datos), COLOR_AMBAR)
     )
 
     for indice, (icono, texto, comando, color_icono) in enumerate(modulos):

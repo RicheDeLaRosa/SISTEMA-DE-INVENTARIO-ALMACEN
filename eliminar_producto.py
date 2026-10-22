@@ -1,6 +1,8 @@
 import tkinter as tk
+import sqlite3
 from tkinter import messagebox
 
+from base_datos import BaseDatosInventario
 from ui_comun import (
     COLOR_FONDO,
     COLOR_LINEA,
@@ -14,7 +16,7 @@ from ui_comun import (
 )
 
 
-def abrir(parent, productos, actualizar_conteo):
+def abrir(parent, productos, actualizar_conteo, base_datos: BaseDatosInventario):
     """Permite revisar un producto y confirmar su eliminación del inventario."""
     ventana = tk.Toplevel(parent)
     configurar_ventana(ventana, parent, "Eliminar producto", "560x440")
@@ -95,6 +97,16 @@ def abrir(parent, productos, actualizar_conteo):
             parent=ventana
         )
         if not confirmar:
+            return
+
+        try:
+            base_datos.eliminar_producto(producto_seleccionado["id"])
+        except (sqlite3.Error, ValueError) as error:
+            messagebox.showerror(
+                "Error de base de datos",
+                f"No se pudo eliminar el producto.\n\n{error}",
+                parent=ventana
+            )
             return
 
         productos.remove(producto_seleccionado)

@@ -1,6 +1,8 @@
 import tkinter as tk
+import sqlite3
 from tkinter import messagebox
 
+from base_datos import BaseDatosInventario
 from ui_comun import (
     COLOR_AMBAR,
     COLOR_AMBAR_HOVER,
@@ -17,7 +19,7 @@ from ui_comun import (
 )
 
 
-def abrir(parent, productos, es_entrada):
+def abrir(parent, productos, es_entrada, base_datos: BaseDatosInventario):
     """Abre el formulario de entrada o salida y actualiza el stock al confirmar."""
     titulo = "ENTRADA DE MERCANCÍA" if es_entrada else "SALIDA DE MERCANCÍA"
     ventana = tk.Toplevel(parent)
@@ -389,10 +391,17 @@ def abrir(parent, productos, es_entrada):
             return
 
         # El signo del cambio depende del tipo de movimiento seleccionado.
-        if es_entrada:
-            producto["stock"] += cantidad
-        else:
-            producto["stock"] -= cantidad
+        stock_nuevo = producto["stock"] + cantidad if es_entrada else producto["stock"] - cantidad
+        try:
+            base_datos.actualizar_stock(producto["id"], stock_nuevo)
+        except (sqlite3.Error, ValueError) as error:
+            messagebox.showerror(
+                "Error de base de datos",
+                f"No se pudo actualizar el stock.\n\n{error}",
+                parent=ventana
+            )
+            return
+        producto["stock"] = stock_nuevo
 
         messagebox.showinfo(
             "Stock actualizado",
