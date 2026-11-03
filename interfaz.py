@@ -10,7 +10,7 @@ import historial_movimientos
 import inventario
 import registrar_producto
 import salida_mercancia
-from base_datos import BaseDatosInventario
+from base_datos import BaseDatosInventario, producto_requiere_reposicion
 from ui_comun import (
     COLOR_AMBAR,
     COLOR_FONDO,
@@ -110,9 +110,11 @@ def main():
 
     # La lista compartida mantiene sincronizada la interfaz con la base de datos.
     conteo_productos = tk.StringVar(value="0")
+    conteo_stock_bajo = tk.StringVar(value="0")
 
     def actualizar_conteo():
         conteo_productos.set(str(len(productos)))
+        conteo_stock_bajo.set(str(sum(producto_requiere_reposicion(producto) for producto in productos)))
 
     cabecera = tk.Frame(ventana, bg=COLOR_SUPERFICIE, padx=26, pady=16)
     cabecera.pack(fill="x")
@@ -134,6 +136,33 @@ def main():
     indicador.pack(side="right")
     tk.Label(indicador, text="PRODUCTOS", bg=COLOR_SUPERFICIE, fg=COLOR_SECUNDARIO, font=(FUENTE, 8, "bold")).pack(anchor="e")
     tk.Label(indicador, textvariable=conteo_productos, bg=COLOR_SUPERFICIE, fg=COLOR_TINTA, font=(FUENTE, 20, "bold")).pack(anchor="e")
+
+    indicador_stock_bajo = tk.Frame(fila_marca, bg=COLOR_SUPERFICIE, padx=10, pady=4)
+    indicador_stock_bajo.pack(side="right", padx=(8, 0))
+    tk.Label(
+        indicador_stock_bajo,
+        text="POR REPONER",
+        bg=COLOR_SUPERFICIE,
+        fg=COLOR_ROJO,
+        font=(FUENTE, 8, "bold"),
+    ).pack(anchor="e")
+    etiqueta_stock_bajo = tk.Label(
+        indicador_stock_bajo,
+        textvariable=conteo_stock_bajo,
+        bg=COLOR_SUPERFICIE,
+        fg=COLOR_ROJO,
+        font=(FUENTE, 20, "bold"),
+        cursor="hand2",
+    )
+    etiqueta_stock_bajo.pack(anchor="e")
+
+    def mostrar_stock_bajo(event=None):
+        productos_bajos = [producto for producto in productos if producto_requiere_reposicion(producto)]
+        inventario.abrir(ventana, productos, productos_bajos, "Productos por reponer")
+
+    for componente in (indicador_stock_bajo, *indicador_stock_bajo.winfo_children()):
+        componente.config(cursor="hand2")
+        componente.bind("<Button-1>", mostrar_stock_bajo)
 
     barra_busqueda = tk.Frame(ventana, bg=COLOR_SUPERFICIE, padx=26)
     barra_busqueda.pack(fill="x")
@@ -196,16 +225,18 @@ def main():
         ("＋", "Registrar producto", lambda: registrar_producto.abrir(ventana, productos, actualizar_conteo, base_datos), COLOR_VERDE),
         ("▤", "Inventario", lambda: inventario.abrir(ventana, productos), COLOR_MARCA),
         ("⌕", "Buscar producto", lambda: buscar_producto.abrir(ventana, productos), COLOR_MARCA),
-        ("↻", "Actualizar producto", lambda: actualizar_producto.abrir(ventana, productos, base_datos), COLOR_VERDE),
+        ("↻", "Actualizar producto", lambda: actualizar_producto.abrir(ventana, productos, base_datos, actualizar_conteo), COLOR_VERDE),
         ("×", "Eliminar producto", lambda: eliminar_producto.abrir(ventana, productos, actualizar_conteo, base_datos), COLOR_ROJO),
-        ("↑", "Entrada de mercancía", lambda: entrada_mercancia.abrir(ventana, productos, base_datos), COLOR_VERDE),
-        ("↓", "Salida de mercancía", lambda: salida_mercancia.abrir(ventana, productos, base_datos), COLOR_AMBAR),
+        ("↑", "Entrada de mercancía", lambda: entrada_mercancia.abrir(ventana, productos, base_datos, actualizar_conteo), COLOR_VERDE),
+        ("↓", "Salida de mercancía", lambda: salida_mercancia.abrir(ventana, productos, base_datos, actualizar_conteo), COLOR_AMBAR),
         ("↕", "Historial de movimientos", lambda: historial_movimientos.abrir(ventana, base_datos), COLOR_MARCA)
     )
 
     for indice, (icono, texto, comando, color_icono) in enumerate(modulos):
         mosaico = crear_mosaico(rejilla_modulos, icono, texto, comando, color_icono)
         mosaico.grid(row=indice // 4, column=indice % 4, sticky="nsew", padx=7, pady=7)
+
+    actualizar_conteo()
 
     pie = tk.Frame(contenido, bg=COLOR_FONDO)
     pie.pack(fill="x")

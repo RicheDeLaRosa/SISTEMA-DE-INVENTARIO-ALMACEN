@@ -19,7 +19,7 @@ from ui_comun import (
 )
 
 
-def abrir(parent, productos, es_entrada, base_datos: BaseDatosInventario):
+def abrir(parent, productos, es_entrada, base_datos: BaseDatosInventario, actualizar_alertas=None):
     """Abre el formulario de entrada o salida y actualiza el stock al confirmar."""
     titulo = "ENTRADA DE MERCANCÍA" if es_entrada else "SALIDA DE MERCANCÍA"
     ventana = tk.Toplevel(parent)
@@ -434,6 +434,8 @@ def abrir(parent, productos, es_entrada, base_datos: BaseDatosInventario):
             )
             return
         producto["stock"] = stock_nuevo
+        if actualizar_alertas is not None:
+            actualizar_alertas()
 
         messagebox.showinfo(
             "Stock actualizado",

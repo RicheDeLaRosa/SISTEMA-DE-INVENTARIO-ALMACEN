@@ -4,7 +4,7 @@ import unittest
 from contextlib import closing
 from pathlib import Path
 
-from base_datos import BaseDatosInventario
+from base_datos import BaseDatosInventario, producto_requiere_reposicion
 
 
 class BaseDatosInventarioTests(unittest.TestCase):
@@ -24,6 +24,7 @@ class BaseDatosInventarioTests(unittest.TestCase):
             "precio": 25,
             "stock": 12,
             "ubicacion": "A-1",
+            "stock_minimo": 0,
         }
         self.base_datos.registrar_producto(producto)
 
@@ -39,10 +40,16 @@ class BaseDatosInventarioTests(unittest.TestCase):
             "precio": 10,
             "stock": 5,
             "ubicacion": "B-2",
+            "stock_minimo": 0,
         }
         self.base_datos.registrar_producto(producto)
         self.base_datos.actualizar_stock("P-002", 9)
-        producto_actualizado = {**producto, "nombre": "Clavos grandes", "precio": 15}
+        producto_actualizado = {
+            **producto,
+            "nombre": "Clavos grandes",
+            "precio": 15,
+            "stock_minimo": 2,
+        }
         self.base_datos.actualizar_producto(producto_actualizado)
 
         self.assertEqual(
@@ -58,6 +65,7 @@ class BaseDatosInventarioTests(unittest.TestCase):
             "precio": 8,
             "stock": 3,
             "ubicacion": "C-1",
+            "stock_minimo": 0,
         }
         self.base_datos.registrar_producto(producto)
 
@@ -73,6 +81,7 @@ class BaseDatosInventarioTests(unittest.TestCase):
             "precio": 1,
             "stock": 1,
             "ubicacion": "A-1",
+            "stock_minimo": 0,
         }
         self.base_datos.registrar_producto(producto)
 
@@ -87,6 +96,7 @@ class BaseDatosInventarioTests(unittest.TestCase):
             "precio": 12,
             "stock": 10,
             "ubicacion": "D-1",
+            "stock_minimo": 5,
         }
         self.base_datos.registrar_producto(producto)
 
@@ -125,6 +135,7 @@ class BaseDatosInventarioTests(unittest.TestCase):
             "precio": 20,
             "stock": 2,
             "ubicacion": "D-2",
+            "stock_minimo": 1,
         }
         self.base_datos.registrar_producto(producto)
 
@@ -164,6 +175,86 @@ class BaseDatosInventarioTests(unittest.TestCase):
         base_datos_anterior.inicializar()
 
         self.assertEqual(base_datos_anterior.listar_movimientos()[0]["motivo"], "Sin especificar")
+
+    def test_inicializar_agrega_minimo_a_productos_existentes(self):
+        ruta = Path(self.directorio_temporal.name) / "productos_anteriores.db"
+        with closing(sqlite3.connect(ruta)) as conexion:
+            with conexion:
+                conexion.execute("""
+                    CREATE TABLE productos (
+                        id TEXT PRIMARY KEY,
+                        nombre TEXT NOT NULL,
+                        categoria TEXT NOT NULL,
+                        precio INTEGER NOT NULL,
+                        stock INTEGER NOT NULL,
+                        ubicacion TEXT NOT NULL
+                    )
+                """)
+                conexion.execute("""
+                    INSERT INTO productos (id, nombre, categoria, precio, stock, ubicacion)
+                    VALUES ('P-008', 'Lapices', 'Papelería', 5, 4, 'A-2')
+                """)
+
+        base_datos_anterior = BaseDatosInventario(ruta)
+        base_datos_anterior.inicializar()
+
+        self.assertEqual(base_datos_anterior.listar_productos()[0]["stock_minimo"], 0)
+
+    def test_lista_productos_que_necesitan_reposicion(self):
+        productos = (
+            {
+                "id": "P-009",
+                "nombre": "Papel",
+                "categoria": "Papelería",
+                "precio": 5,
+                "stock": 3,
+                "ubicacion": "A-1",
+                "stock_minimo": 3,
+            },
+            {
+                "id": "P-010",
+                "nombre": "Gomas",
+                "categoria": "Papelería",
+                "precio": 2,
+                "stock": 4,
+                "ubicacion": "A-1",
+                "stock_minimo": 3,
+            },
+            {
+                "id": "P-011",
+                "nombre": "Reglas",
+                "categoria": "Papelería",
+                "precio": 8,
+                "stock": 0,
+                "ubicacion": "A-1",
+                "stock_minimo": 0,
+            },
+        )
+        for producto in productos:
+            self.base_datos.registrar_producto(producto)
+
+        self.assertEqual(
+            [
+                producto["id"]
+                for producto in self.base_datos.listar_productos()
+                if producto_requiere_reposicion(producto)
+            ],
+            ["P-009", "P-011"],
+        )
+
+    def test_rechaza_minimo_negativo(self):
+        producto = {
+            "id": "P-012",
+            "nombre": "Grapas",
+            "categoria": "Oficina",
+            "precio": 3,
+            "stock": 4,
+            "ubicacion": "A-1",
+            "stock_minimo": -1,
+        }
+
+        with self.assertRaises(ValueError):
+            self.base_datos.registrar_producto(producto)
 
 
 if __name__ == "__main__":

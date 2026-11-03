@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from base_datos import producto_requiere_reposicion
 from ui_comun import (
     COLOR_FONDO,
     COLOR_LINEA,
@@ -75,20 +76,29 @@ def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
     estilo.configure("Inventario.Treeview.Heading", font=(FUENTE, 9, "bold"), padding=(8, 9))
     estilo.map("Inventario.Treeview", background=[("selected", COLOR_VERDE)], foreground=[("selected", COLOR_SUPERFICIE)])
 
-    columnas = ("id", "nombre", "categoria", "precio", "stock", "ubicacion")
+    columnas = ("id", "nombre", "categoria", "precio", "stock", "stock_minimo", "ubicacion")
     encabezados = {
         "id": "ID",
         "nombre": "Nombre",
         "categoria": "Categoría",
         "precio": "Precio",
         "stock": "Existencias",
+        "stock_minimo": "Mínimo",
         "ubicacion": "Ubicación"
     }
     alineaciones = {columna: "w" for columna in columnas}
     marco_tabla = tk.Frame(contenedor, bg=COLOR_SUPERFICIE, highlightbackground=COLOR_LINEA, highlightthickness=1)
     marco_tabla.pack(fill="both", expand=True)
     tabla = ttk.Treeview(marco_tabla, columns=columnas, show="headings", style="Inventario.Treeview")
-    anchos = {"id": 90, "nombre": 190, "categoria": 150, "precio": 100, "stock": 105, "ubicacion": 150}
+    anchos = {
+        "id": 90,
+        "nombre": 190,
+        "categoria": 150,
+        "precio": 100,
+        "stock": 105,
+        "stock_minimo": 90,
+        "ubicacion": 150,
+    }
     orden = {columna: False for columna in columnas}
 
     def ordenar(columna):
@@ -117,6 +127,7 @@ def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
             stretch=True
         )
     tabla.tag_configure("sin_stock", foreground=COLOR_ROJO)
+    tabla.tag_configure("stock_bajo", foreground="#A9682B")
     tabla.tag_configure("fila_par", background="#F4F8FA")
 
     estado_vacio = tk.Label(
@@ -150,8 +161,10 @@ def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
         tabla.delete(*tabla.get_children())
         for indice, producto in enumerate(filas):
             etiquetas = []
-            if producto["stock"] == 0:
+            if producto["stock"] <= 0:
                 etiquetas.append("sin_stock")
+            elif producto_requiere_reposicion(producto):
+                etiquetas.append("stock_bajo")
             if indice % 2:
                 etiquetas.append("fila_par")
             tabla.insert("", "end", values=tuple(producto[columna] for columna in columnas), tags=etiquetas)
@@ -159,11 +172,28 @@ def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
         valor_productos.config(text=str(len(lista_productos)))
         valor_unidades.config(text=str(sum(producto["stock"] for producto in lista_productos)))
         if not filas:
-            estado_vacio.config(text="El inventario está vacío." if not lista_productos else "No hay coincidencias con ese filtro.")
+            if titulo == "Productos por reponer":
+                mensaje_vacio = (
+                    "No hay productos por reponer."
+                    if not lista_productos
+                    else "No hay coincidencias con ese filtro."
+                )
+            else:
+                mensaje_vacio = (
+                    "El inventario está vacío."
+                    if not lista_productos
+                    else "No hay coincidencias con ese filtro."
+                )
+            estado_vacio.config(text=mensaje_vacio)
             estado_vacio.pack(fill="x", before=marco_tabla)
         else:
             estado_vacio.pack_forget()
-        estado.config(text=f"Mostrando {len(filas)} de {len(lista_productos)} productos  ·  En rojo: sin existencias")
+        estado.config(
+            text=(
+                f"Mostrando {len(filas)} de {len(lista_productos)} productos  ·  "
+                "En rojo: sin existencias  ·  En ámbar: stock bajo el mínimo"
+            )
+        )
 
     def limpiar_filtro():
         # Quita el texto de búsqueda y reconstruye la vista sin restricciones.

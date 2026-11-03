@@ -15,11 +15,11 @@ from ui_comun import (
 )
 
 
-def abrir(parent, productos, base_datos: BaseDatosInventario):
+def abrir(parent, productos, base_datos: BaseDatosInventario, actualizar_alertas=None):
     """Permite cargar un producto por ID y editar sus datos descriptivos."""
     ventana = tk.Toplevel(parent)
-    configurar_ventana(ventana, parent, "Actualizar producto", "620x570")
-    ventana.minsize(540, 500)
+    configurar_ventana(ventana, parent, "Actualizar producto", "620x640")
+    ventana.minsize(540, 580)
 
     panel = tk.Frame(ventana, bg=COLOR_FONDO, padx=24, pady=20)
     panel.pack(fill="both", expand=True)
@@ -60,7 +60,8 @@ def abrir(parent, productos, base_datos: BaseDatosInventario):
         ("nombre", "NOMBRE"),
         ("categoria", "CATEGORÍA"),
         ("precio", "PRECIO"),
-        ("ubicacion", "UBICACIÓN")
+        ("ubicacion", "UBICACIÓN"),
+        ("stock_minimo", "MÍNIMO DE STOCK (0 = SIN MÍNIMO)")
     )):
         fila, columna = divmod(indice, 2)
         grupo = tk.Frame(formulario, bg=COLOR_SUPERFICIE)
@@ -128,11 +129,29 @@ def abrir(parent, productos, base_datos: BaseDatosInventario):
             messagebox.showerror("Precio inválido", "El precio debe ser un número entero.", parent=ventana)
             return
 
+        try:
+            stock_minimo_nuevo = int(valores["stock_minimo"])
+        except ValueError:
+            messagebox.showerror(
+                "Mínimo inválido",
+                "El mínimo de stock debe ser un número entero.",
+                parent=ventana,
+            )
+            return
+        if stock_minimo_nuevo < 0:
+            messagebox.showerror(
+                "Mínimo inválido",
+                "El mínimo de stock no puede ser negativo.",
+                parent=ventana,
+            )
+            return
+
         cambios = {
             "nombre": valores["nombre"],
             "categoria": valores["categoria"],
             "precio": precio_nuevo,
-            "ubicacion": valores["ubicacion"]
+            "ubicacion": valores["ubicacion"],
+            "stock_minimo": stock_minimo_nuevo,
         }
         producto_actualizado = {**producto_seleccionado, **cambios}
         try:
@@ -146,6 +165,8 @@ def abrir(parent, productos, base_datos: BaseDatosInventario):
             return
 
         producto_seleccionado.update(cambios)
+        if actualizar_alertas is not None:
+            actualizar_alertas()
         messagebox.showinfo("Producto actualizado", "Los datos se actualizaron correctamente.", parent=ventana)
         ventana.destroy()
 

@@ -3,6 +3,13 @@ from contextlib import closing, contextmanager
 from pathlib import Path
 
 
+def producto_requiere_reposicion(producto):
+    """Indica si el stock agotado o bajo el mínimo requiere reposición."""
+    stock = producto["stock"]
+    minimo = producto.get("stock_minimo", 0)
+    return stock <= 0 or (minimo > 0 and stock <= minimo)
+
+
 class BaseDatosInventario:
     """Administra el almacenamiento persistente de productos del inventario."""
 
@@ -26,9 +33,18 @@ class BaseDatosInventario:
                     categoria TEXT NOT NULL,
                     precio INTEGER NOT NULL,
                     stock INTEGER NOT NULL,
-                    ubicacion TEXT NOT NULL
+                    ubicacion TEXT NOT NULL,
+                    stock_minimo INTEGER NOT NULL DEFAULT 0 CHECK (stock_minimo >= 0)
                 )
             """)
+            columnas_productos = {
+                fila[1] for fila in conexion.execute("PRAGMA table_info(productos)")
+            }
+            if "stock_minimo" not in columnas_productos:
+                conexion.execute("""
+                    ALTER TABLE productos
+                    ADD COLUMN stock_minimo INTEGER NOT NULL DEFAULT 0 CHECK (stock_minimo >= 0)
+                """)
             conexion.execute("""
                 CREATE TABLE IF NOT EXISTS movimientos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,7 +71,7 @@ class BaseDatosInventario:
         """Devuelve los productos almacenados en el orden en que se registraron."""
         with self._conexion() as conexion:
             filas = conexion.execute("""
-                SELECT id, nombre, categoria, precio, stock, ubicacion
+                SELECT id, nombre, categoria, precio, stock, ubicacion, stock_minimo
                 FROM productos
                 ORDER BY rowid
             """).fetchall()
@@ -67,15 +83,21 @@ class BaseDatosInventario:
                 "precio": fila[3],
                 "stock": fila[4],
                 "ubicacion": fila[5],
+                "stock_minimo": fila[6],
             }
             for fila in filas
         ]
 
     def registrar_producto(self, producto):
+        stock_minimo = producto.get("stock_minimo", 0)
+        if not isinstance(stock_minimo, int) or stock_minimo < 0:
+            raise ValueError("El mínimo de stock debe ser un entero mayor o igual a cero.")
         with self._conexion() as conexion:
             conexion.execute("""
-                INSERT INTO productos (id, nombre, categoria, precio, stock, ubicacion)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO productos (
+                    id, nombre, categoria, precio, stock, ubicacion, stock_minimo
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
                 producto["id"],
                 producto["nombre"],
@@ -83,19 +105,24 @@ class BaseDatosInventario:
                 producto["precio"],
                 producto["stock"],
                 producto["ubicacion"],
+                stock_minimo,
             ))
 
     def actualizar_producto(self, producto):
+        stock_minimo = producto.get("stock_minimo", 0)
+        if not isinstance(stock_minimo, int) or stock_minimo < 0:
+            raise ValueError("El mínimo de stock debe ser un entero mayor o igual a cero.")
         with self._conexion() as conexion:
             cursor = conexion.execute("""
                 UPDATE productos
-                SET nombre = ?, categoria = ?, precio = ?, ubicacion = ?
+                SET nombre = ?, categoria = ?, precio = ?, ubicacion = ?, stock_minimo = ?
                 WHERE id = ?
             """, (
                 producto["nombre"],
                 producto["categoria"],
                 producto["precio"],
                 producto["ubicacion"],
+                stock_minimo,
                 producto["id"],
             ))
             if cursor.rowcount == 0:

@@ -23,7 +23,7 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
     print("3. Buscar producto ")
     print("4. Entrada de mercancia ")
     print("5. Salida de mercancia" )
-    print("6. Actualizar, Nombre, Categoria, Precio, Ubicacion" )
+    print("6. Actualizar producto y mínimo de stock")
     print("7. Eliminar producto ")
     print("8. Salir ")
     print("9. Historial de movimientos ")
@@ -48,6 +48,7 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
             precio = int(input("Ingrese el precio: "))                
             stock = int(input("Ingrese el stock: "))
             ubicacion = input("Ingrese la ubicacion: ")
+            stock_minimo = int(input("Ingrese el mínimo de stock (0 = sin mínimo): "))
 
             producto = {
                 "id": id,
@@ -56,10 +57,11 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
                 "precio": precio,
                 "stock": stock,
                 "ubicacion": ubicacion,
+                "stock_minimo": stock_minimo,
             }
             try:
                 base_datos.registrar_producto(producto)
-            except sqlite3.Error as error:
+            except (sqlite3.Error, ValueError) as error:
                 print(f"NO SE PUDO GUARDAR EL PRODUCTO: {error}")
             else:
                 productos.append(producto)
@@ -74,6 +76,7 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
             print(producto["categoria"])
             print(producto["precio"])
             print(producto["stock"])
+            print(f"Mínimo de stock: {producto['stock_minimo']}")
             print(producto["ubicacion"])
 
     elif opcion == "3":
@@ -89,6 +92,7 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
                 print(producto["categoria"])
                 print(producto["precio"])
                 print(producto["stock"])
+                print(f"Mínimo de stock: {producto['stock_minimo']}")
                 print(producto["ubicacion"])
                 encontrado = True
 
@@ -164,6 +168,9 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
                 nuevo_nombre = (input("Ingrese el nuevo nombre: "))
                 nuevo_categoria = (input("Ingrese la nueva categoria: "))
                 nuevo_ubicacion = (input("Ingrese la nueva ubicacion: "))
+                nuevo_stock_minimo = int(
+                    input("Ingrese el nuevo mínimo de stock (0 = sin mínimo): ")
+                )
 
                 producto_actualizado = {
                     **producto,
@@ -171,6 +178,7 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
                     "nombre": nuevo_nombre,
                     "categoria": nuevo_categoria,
                     "ubicacion": nuevo_ubicacion,
+                    "stock_minimo": nuevo_stock_minimo,
                 }
                 try:
                     base_datos.actualizar_producto(producto_actualizado)

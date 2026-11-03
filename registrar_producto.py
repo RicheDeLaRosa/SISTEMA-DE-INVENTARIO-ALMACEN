@@ -9,8 +9,8 @@ from ui_comun import COLOR_FONDO, COLOR_SUPERFICIE, COLOR_TINTA, COLOR_SECUNDARI
 def abrir(parent, productos, actualizar_conteo, base_datos: BaseDatosInventario):
     """Muestra el formulario para validar y agregar un producto al inventario."""
     ventana = tk.Toplevel(parent)
-    configurar_ventana(ventana, parent, "Registrar producto", "560x520")
-    ventana.minsize(500, 480)
+    configurar_ventana(ventana, parent, "Registrar producto", "560x600")
+    ventana.minsize(500, 560)
 
     panel = tk.Frame(ventana, bg=COLOR_SUPERFICIE, padx=26, pady=22)
     panel.pack(fill="both", expand=True, padx=18, pady=18)
@@ -55,7 +55,9 @@ def abrir(parent, productos, actualizar_conteo, base_datos: BaseDatosInventario)
     crear_campo("categoria", "CATEGORÍA", 1, 0)
     crear_campo("precio", "PRECIO", 1, 1)
     crear_campo("stock", "STOCK INICIAL", 2, 0)
-    crear_campo("ubicacion", "UBICACIÓN", 2, 1)
+    crear_campo("stock_minimo", "MÍNIMO DE STOCK (0 = SIN MÍNIMO)", 2, 1)
+    crear_campo("ubicacion", "UBICACIÓN", 3, 0)
+    campos["stock_minimo"].insert(0, "0")
 
     def guardar_producto():
         # Comprueba integridad y tipos antes de insertar el producto en la lista.
@@ -65,7 +67,8 @@ def abrir(parent, productos, actualizar_conteo, base_datos: BaseDatosInventario)
         ubicacion_producto = campos["ubicacion"].get().strip()
 
         if not all((id_producto, nombre_producto, categoria_producto, ubicacion_producto,
-                    campos["precio"].get().strip(), campos["stock"].get().strip())):
+                    campos["precio"].get().strip(), campos["stock"].get().strip(),
+                    campos["stock_minimo"].get().strip())):
             messagebox.showerror("Datos incompletos", "Completa todos los campos.", parent=ventana)
             return
 
@@ -76,8 +79,21 @@ def abrir(parent, productos, actualizar_conteo, base_datos: BaseDatosInventario)
         try:
             precio_producto = int(campos["precio"].get())
             stock_producto = int(campos["stock"].get())
+            stock_minimo_producto = int(campos["stock_minimo"].get())
         except ValueError:
-            messagebox.showerror("Dato inválido", "El precio y el stock deben ser números enteros.", parent=ventana)
+            messagebox.showerror(
+                "Dato inválido",
+                "El precio, el stock y el mínimo deben ser números enteros.",
+                parent=ventana,
+            )
+            return
+
+        if stock_minimo_producto < 0:
+            messagebox.showerror(
+                "Mínimo inválido",
+                "El mínimo de stock no puede ser negativo.",
+                parent=ventana,
+            )
             return
 
         producto = {
@@ -86,7 +102,8 @@ def abrir(parent, productos, actualizar_conteo, base_datos: BaseDatosInventario)
             "categoria": categoria_producto,
             "precio": precio_producto,
             "stock": stock_producto,
-            "ubicacion": ubicacion_producto
+            "ubicacion": ubicacion_producto,
+            "stock_minimo": stock_minimo_producto,
         }
         try:
             base_datos.registrar_producto(producto)
