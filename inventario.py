@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from base_datos import producto_requiere_reposicion
+from base_datos import filtrar_productos, producto_requiere_reposicion
 from ui_comun import (
     COLOR_FONDO,
     COLOR_LINEA,
@@ -18,6 +18,7 @@ from ui_comun import (
 
 def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
     """Muestra existencias, indicadores y herramientas de filtro y ordenamiento."""
+    productos_disponibles = productos if productos_filtrados is None else productos_filtrados
     ventana = tk.Toplevel(parent)
     configurar_ventana(ventana, parent, titulo, "1040x620")
     ventana.minsize(760, 500)
@@ -59,17 +60,57 @@ def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
 
     barra_herramientas = tk.Frame(contenedor, bg=COLOR_FONDO)
     barra_herramientas.pack(fill="x", pady=(0, 12))
+    fila_busqueda = tk.Frame(barra_herramientas, bg=COLOR_FONDO)
+    fila_busqueda.pack(fill="x", pady=(0, 8))
     tk.Label(
-        barra_herramientas,
-        text="FILTRAR",
+        fila_busqueda,
+        text="BUSCAR",
         bg=COLOR_FONDO,
         fg=COLOR_TINTA,
         font=(FUENTE, 9, "bold")
     ).pack(side="left", padx=(0, 10))
-    entrada_filtro = tk.Entry(barra_herramientas, font=(FUENTE, 10), width=38)
-    entrada_filtro.pack(side="left", ipady=6)
-    entrada_filtro.insert(0, "ID, nombre, categoría o ubicación")
+    entrada_filtro = tk.Entry(fila_busqueda, font=(FUENTE, 10))
+    entrada_filtro.pack(side="left", fill="x", expand=True, ipady=6)
+    entrada_filtro.insert(0, "ID, nombre, categoría, ubicación o stock")
     entrada_filtro.config(fg=COLOR_SECUNDARIO)
+
+    fila_filtros = tk.Frame(barra_herramientas, bg=COLOR_FONDO)
+    fila_filtros.pack(fill="x")
+    categorias = sorted(
+        {producto["categoria"] for producto in productos_disponibles if producto["categoria"]},
+        key=str.casefold,
+    )
+    ubicaciones = sorted(
+        {producto["ubicacion"] for producto in productos_disponibles if producto["ubicacion"]},
+        key=str.casefold,
+    )
+
+    def crear_filtro(etiqueta, valores, ancho):
+        tk.Label(
+            fila_filtros,
+            text=etiqueta,
+            bg=COLOR_FONDO,
+            fg=COLOR_TINTA,
+            font=(FUENTE, 8, "bold"),
+        ).pack(side="left", padx=(0, 5))
+        selector = ttk.Combobox(
+            fila_filtros,
+            state="readonly",
+            values=valores,
+            width=ancho,
+            font=(FUENTE, 9),
+        )
+        selector.current(0)
+        selector.pack(side="left", padx=(0, 12), ipady=3)
+        return selector
+
+    filtro_categoria = crear_filtro("CATEGORÍA", ["Todas"] + categorias, 16)
+    filtro_ubicacion = crear_filtro("UBICACIÓN", ["Todas"] + ubicaciones, 14)
+    filtro_stock = crear_filtro(
+        "STOCK",
+        ["Todos", "Agotado", "Por reponer", "Existencias suficientes"],
+        23,
+    )
 
     estilo = ttk.Style(ventana)
     estilo.configure("Inventario.Treeview", rowheight=34, font=(FUENTE, 10), background=COLOR_SUPERFICIE, fieldbackground=COLOR_SUPERFICIE)
@@ -150,14 +191,19 @@ def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
 
     def refrescar_tabla(*args):
         # Vuelve a calcular filas e indicadores usando el filtro activo.
-        lista_productos = list(productos if productos_filtrados is None else productos_filtrados)
-        consulta = entrada_filtro.get().strip().casefold()
-        if consulta == "id, nombre, categoría o ubicación":
+        lista_productos = list(productos_disponibles)
+        consulta = entrada_filtro.get().strip()
+        if consulta == "ID, nombre, categoría, ubicación o stock":
             consulta = ""
-        filas = [
-            producto for producto in lista_productos
-            if not consulta or any(consulta in str(producto[columna]).casefold() for columna in columnas)
-        ]
+        categoria = filtro_categoria.get()
+        ubicacion = filtro_ubicacion.get()
+        filas = filtrar_productos(
+            lista_productos,
+            consulta=consulta,
+            categoria="" if categoria == "Todas" else categoria,
+            ubicacion="" if ubicacion == "Todas" else ubicacion,
+            nivel_stock=filtro_stock.get(),
+        )
         tabla.delete(*tabla.get_children())
         for indice, producto in enumerate(filas):
             etiquetas = []
@@ -198,21 +244,28 @@ def abrir(parent, productos, productos_filtrados=None, titulo="Inventario"):
     def limpiar_filtro():
         # Quita el texto de búsqueda y reconstruye la vista sin restricciones.
         entrada_filtro.delete(0, tk.END)
-        entrada_filtro.config(fg=COLOR_TINTA)
+        entrada_filtro.insert(0, "ID, nombre, categoría, ubicación o stock")
+        entrada_filtro.config(fg=COLOR_SECUNDARIO)
+        filtro_categoria.current(0)
+        filtro_ubicacion.current(0)
+        filtro_stock.current(0)
         refrescar_tabla()
         entrada_filtro.focus_set()
 
-    entrada_filtro.bind("<FocusIn>", lambda event: entrada_filtro.delete(0, tk.END) if entrada_filtro.get() == "ID, nombre, categoría o ubicación" else None)
+    entrada_filtro.bind("<FocusIn>", lambda event: entrada_filtro.delete(0, tk.END) if entrada_filtro.get() == "ID, nombre, categoría, ubicación o stock" else None)
     entrada_filtro.bind("<FocusIn>", lambda event: entrada_filtro.config(fg=COLOR_TINTA), add="+")
-    entrada_filtro.bind("<FocusOut>", lambda event: entrada_filtro.insert(0, "ID, nombre, categoría o ubicación") if not entrada_filtro.get().strip() else None)
-    entrada_filtro.bind("<FocusOut>", lambda event: entrada_filtro.config(fg=COLOR_SECUNDARIO) if entrada_filtro.get() == "ID, nombre, categoría o ubicación" else None, add="+")
+    entrada_filtro.bind("<FocusOut>", lambda event: entrada_filtro.insert(0, "ID, nombre, categoría, ubicación o stock") if not entrada_filtro.get().strip() else None)
+    entrada_filtro.bind("<FocusOut>", lambda event: entrada_filtro.config(fg=COLOR_SECUNDARIO) if entrada_filtro.get() == "ID, nombre, categoría, ubicación o stock" else None, add="+")
     entrada_filtro.bind("<KeyRelease>", refrescar_tabla)
     entrada_filtro.bind("<Return>", refrescar_tabla)
     entrada_filtro.bind("<Escape>", lambda event: limpiar_filtro())
+    filtro_categoria.bind("<<ComboboxSelected>>", refrescar_tabla)
+    filtro_ubicacion.bind("<<ComboboxSelected>>", refrescar_tabla)
+    filtro_stock.bind("<<ComboboxSelected>>", refrescar_tabla)
 
     boton_limpiar = tk.Button(
         barra_herramientas,
-        text="Limpiar",
+        text="Limpiar filtros",
         command=limpiar_filtro,
         font=(FUENTE, 9, "bold"),
         bg=COLOR_FONDO,

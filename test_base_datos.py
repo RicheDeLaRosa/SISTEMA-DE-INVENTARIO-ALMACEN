@@ -4,7 +4,11 @@ import unittest
 from contextlib import closing
 from pathlib import Path
 
-from base_datos import BaseDatosInventario, producto_requiere_reposicion
+from base_datos import (
+    BaseDatosInventario,
+    filtrar_productos,
+    producto_requiere_reposicion,
+)
 
 
 class BaseDatosInventarioTests(unittest.TestCase):
@@ -255,6 +259,70 @@ class BaseDatosInventarioTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self.base_datos.registrar_producto(producto)
+
+    def test_filtra_por_categoria_ubicacion_y_nivel_de_stock(self):
+        productos = [
+            {
+                "id": "P-013",
+                "nombre": "Cuaderno",
+                "categoria": "Papelería",
+                "precio": 15,
+                "stock": 2,
+                "stock_minimo": 3,
+                "ubicacion": "A-1",
+            },
+            {
+                "id": "P-014",
+                "nombre": "Lapicera",
+                "categoria": "Papelería",
+                "precio": 8,
+                "stock": 10,
+                "stock_minimo": 3,
+                "ubicacion": "A-2",
+            },
+            {
+                "id": "P-015",
+                "nombre": "Taza",
+                "categoria": "Cocina",
+                "precio": 20,
+                "stock": 0,
+                "stock_minimo": 0,
+                "ubicacion": "B-1",
+            },
+        ]
+
+        self.assertEqual(
+            [producto["id"] for producto in filtrar_productos(productos, categoria="Papelería")],
+            ["P-013", "P-014"],
+        )
+        self.assertEqual(
+            [producto["id"] for producto in filtrar_productos(productos, ubicacion="a-2")],
+            ["P-014"],
+        )
+        self.assertEqual(
+            [
+                producto["id"]
+                for producto in filtrar_productos(productos, nivel_stock="Por reponer")
+            ],
+            ["P-013"],
+        )
+        self.assertEqual(
+            [
+                producto["id"]
+                for producto in filtrar_productos(
+                    productos,
+                    consulta="cuad",
+                    categoria="Papelería",
+                    ubicacion="A-1",
+                    nivel_stock="Por reponer",
+                )
+            ],
+            ["P-013"],
+        )
+        self.assertEqual(
+            [producto["id"] for producto in filtrar_productos(productos, nivel_stock="Agotado")],
+            ["P-015"],
+        )
 
 
 if __name__ == "__main__":

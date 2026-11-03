@@ -10,6 +10,35 @@ def producto_requiere_reposicion(producto):
     return stock <= 0 or (minimo > 0 and stock <= minimo)
 
 
+def filtrar_productos(productos, consulta="", categoria="", ubicacion="", nivel_stock="Todos"):
+    """Filtra productos por texto, categoría, ubicación y disponibilidad."""
+    consulta = consulta.strip().casefold()
+    categoria = categoria.casefold()
+    ubicacion = ubicacion.casefold()
+
+    def coincide_nivel(producto):
+        stock = producto["stock"]
+        if nivel_stock == "Agotado":
+            return stock <= 0
+        if nivel_stock == "Por reponer":
+            return stock > 0 and producto_requiere_reposicion(producto)
+        if nivel_stock == "Existencias suficientes":
+            return stock > 0 and not producto_requiere_reposicion(producto)
+        return True
+
+    return [
+        producto
+        for producto in productos
+        if (
+            not consulta
+            or any(consulta in str(valor).casefold() for valor in producto.values())
+        )
+        and (not categoria or producto["categoria"].casefold() == categoria)
+        and (not ubicacion or producto["ubicacion"].casefold() == ubicacion)
+        and coincide_nivel(producto)
+    ]
+
+
 class BaseDatosInventario:
     """Administra el almacenamiento persistente de productos del inventario."""
 
