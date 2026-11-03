@@ -26,6 +26,7 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
     print("6. Actualizar, Nombre, Categoria, Precio, Ubicacion" )
     print("7. Eliminar producto ")
     print("8. Salir ")
+    print("9. Historial de movimientos ")
 
     opcion = input("Selecciona una opcion: ") #Aqui estamos declarando una variable la cual se llama opcion. lo que hace es que al momento de que el usuario inigrese su respuesta se almacena en opcion
 
@@ -105,9 +106,11 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
 
                 cantidad = int(input("¿CUANTAS UNIDADES VAN A ENTRAR? "))
                 if cantidad > 0:
-                    stock_nuevo = producto["stock"] + cantidad
+                    motivo = input("Motivo de la entrada: ").strip()
                     try:
-                        base_datos.actualizar_stock(producto["id"], stock_nuevo)
+                        stock_nuevo = base_datos.registrar_movimiento_stock(
+                            producto["id"], "Entrada", cantidad, motivo
+                        )
                     except (sqlite3.Error, ValueError) as error:
                         print(f"NO SE PUDO ACTUALIZAR EL STOCK: {error}")
                     else:
@@ -130,9 +133,11 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
                 cantidad = int(input("¿CUANTAS UNIDADES VAN A SALIR? "))
                 if cantidad > 0:
                     if cantidad <= producto["stock"]:
-                        stock_nuevo = producto["stock"] - cantidad
+                        motivo = input("Motivo de la salida: ").strip()
                         try:
-                            base_datos.actualizar_stock(producto["id"], stock_nuevo)
+                            stock_nuevo = base_datos.registrar_movimiento_stock(
+                                producto["id"], "Salida", cantidad, motivo
+                            )
                         except (sqlite3.Error, ValueError) as error:
                             print(f"NO SE PUDO ACTUALIZAR EL STOCK: {error}")
                         else:
@@ -198,6 +203,23 @@ while opcion != "8": #Lo que hace esta parte es que todo el codigo esta dentro d
 
     elif opcion == "8":
         print("Saliendo del programa... ")
+
+    elif opcion == "9":
+        try:
+            movimientos = base_datos.listar_movimientos()
+        except (sqlite3.Error, OSError) as error:
+            print(f"NO SE PUDO CARGAR EL HISTORIAL: {error}")
+        else:
+            if not movimientos:
+                print("NO HAY MOVIMIENTOS REGISTRADOS")
+            for movimiento in movimientos:
+                print(
+                    f"{movimiento['fecha']} | {movimiento['tipo']} | "
+                    f"{movimiento['producto_id']} - {movimiento['producto_nombre']} | "
+                    f"Cantidad: {movimiento['cantidad']} | "
+                    f"Stock: {movimiento['stock_anterior']} -> {movimiento['stock_nuevo']} | "
+                    f"Motivo: {movimiento['motivo']}"
+                )
 
     else: 
         print("opcion incorrecta") #Lo que hace esta parte es ver si el usuario ingresa un numero que no esta en el menu, si agrega un numero que no esta lo que hace es que aparece un mensaje diciendo que el numero que ingreso no esta en el menu

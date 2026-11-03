@@ -25,8 +25,8 @@ def abrir(parent, productos, es_entrada, base_datos: BaseDatosInventario):
     ventana = tk.Toplevel(parent)
     if es_entrada:
         # La entrada usa verde para comunicar visualmente que las existencias aumentarán.
-        configurar_ventana(ventana, parent, titulo.title(), "560x620")
-        ventana.minsize(500, 580)
+        configurar_ventana(ventana, parent, titulo.title(), "560x700")
+        ventana.minsize(500, 640)
 
         panel = tk.Frame(ventana, bg=COLOR_SUPERFICIE)
         panel.pack(fill="both", expand=True, padx=20, pady=20)
@@ -149,6 +149,15 @@ def abrir(parent, productos, es_entrada, base_datos: BaseDatosInventario):
             fg=COLOR_SECUNDARIO,
             font=(FUENTE, 9),
         ).pack(anchor="w", pady=(5, 0))
+        tk.Label(
+            formulario,
+            text="MOTIVO DEL MOVIMIENTO",
+            bg=COLOR_SUPERFICIE,
+            fg=COLOR_TINTA,
+            font=(FUENTE, 9, "bold"),
+        ).pack(anchor="w", pady=(14, 7))
+        entrada_motivo = tk.Entry(formulario, font=(FUENTE, 11))
+        entrada_motivo.pack(fill="x", ipady=8)
 
         # Actualiza el nombre y calcula el stock esperado mientras se completa la entrada.
         def actualizar_vista_previa(event=None):
@@ -186,8 +195,8 @@ def abrir(parent, productos, es_entrada, base_datos: BaseDatosInventario):
         ventana.bind("<Escape>", lambda event: ventana.destroy())
     else:
         # La salida usa ámbar y presenta el stock restante antes de confirmar el retiro.
-        configurar_ventana(ventana, parent, titulo.title(), "560x620")
-        ventana.minsize(500, 580)
+        configurar_ventana(ventana, parent, titulo.title(), "560x700")
+        ventana.minsize(500, 640)
 
         panel = tk.Frame(ventana, bg=COLOR_SUPERFICIE)
         panel.pack(fill="both", expand=True, padx=20, pady=20)
@@ -313,6 +322,15 @@ def abrir(parent, productos, es_entrada, base_datos: BaseDatosInventario):
             font=(FUENTE, 9),
         )
         mensaje_cantidad_label.pack(anchor="w", pady=(5, 0))
+        tk.Label(
+            formulario,
+            text="MOTIVO DEL MOVIMIENTO",
+            bg=COLOR_SUPERFICIE,
+            fg=COLOR_TINTA,
+            font=(FUENTE, 9, "bold"),
+        ).pack(anchor="w", pady=(14, 7))
+        entrada_motivo = tk.Entry(formulario, font=(FUENTE, 11))
+        entrada_motivo.pack(fill="x", ipady=8)
 
         # Valida la disponibilidad y anticipa el resultado de descontar la cantidad.
         def actualizar_vista_previa(event=None):
@@ -380,6 +398,16 @@ def abrir(parent, productos, es_entrada, base_datos: BaseDatosInventario):
             messagebox.showerror("Cantidad inválida", "La cantidad debe ser mayor que cero.", parent=ventana)
             return
 
+        motivo = entrada_motivo.get().strip()
+        if not motivo:
+            messagebox.showerror(
+                "Motivo obligatorio",
+                "Describe brevemente el motivo del movimiento.",
+                parent=ventana,
+            )
+            entrada_motivo.focus_set()
+            return
+
         producto = next((producto for producto in productos if producto["id"] == id_producto), None)
         if producto is None:
             messagebox.showerror("Producto no encontrado", "No existe un producto con ese ID.", parent=ventana)
@@ -390,14 +418,18 @@ def abrir(parent, productos, es_entrada, base_datos: BaseDatosInventario):
             messagebox.showerror("Stock insuficiente", "No hay suficiente stock para realizar la salida.", parent=ventana)
             return
 
-        # El signo del cambio depende del tipo de movimiento seleccionado.
-        stock_nuevo = producto["stock"] + cantidad if es_entrada else producto["stock"] - cantidad
+        tipo_movimiento = "Entrada" if es_entrada else "Salida"
         try:
-            base_datos.actualizar_stock(producto["id"], stock_nuevo)
+            stock_nuevo = base_datos.registrar_movimiento_stock(
+                producto["id"],
+                tipo_movimiento,
+                cantidad,
+                motivo,
+            )
         except (sqlite3.Error, ValueError) as error:
             messagebox.showerror(
-                "Error de base de datos",
-                f"No se pudo actualizar el stock.\n\n{error}",
+                "No se pudo registrar el movimiento",
+                f"No se actualizó el stock ni se guardó el movimiento.\n\n{error}",
                 parent=ventana
             )
             return

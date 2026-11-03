@@ -6,6 +6,7 @@ import actualizar_producto
 import buscar_producto
 import eliminar_producto
 import entrada_mercancia
+import historial_movimientos
 import inventario
 import registrar_producto
 import salida_mercancia
@@ -198,7 +199,8 @@ def main():
         ("↻", "Actualizar producto", lambda: actualizar_producto.abrir(ventana, productos, base_datos), COLOR_VERDE),
         ("×", "Eliminar producto", lambda: eliminar_producto.abrir(ventana, productos, actualizar_conteo, base_datos), COLOR_ROJO),
         ("↑", "Entrada de mercancía", lambda: entrada_mercancia.abrir(ventana, productos, base_datos), COLOR_VERDE),
-        ("↓", "Salida de mercancía", lambda: salida_mercancia.abrir(ventana, productos, base_datos), COLOR_AMBAR)
+        ("↓", "Salida de mercancía", lambda: salida_mercancia.abrir(ventana, productos, base_datos), COLOR_AMBAR),
+        ("↕", "Historial de movimientos", lambda: historial_movimientos.abrir(ventana, base_datos), COLOR_MARCA)
     )
 
     for indice, (icono, texto, comando, color_icono) in enumerate(modulos):

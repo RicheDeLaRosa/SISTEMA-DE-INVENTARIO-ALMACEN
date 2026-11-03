@@ -1,6 +1,7 @@
 import sqlite3
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
 
 from base_datos import BaseDatosInventario
@@ -77,6 +78,92 @@ class BaseDatosInventarioTests(unittest.TestCase):
 
         with self.assertRaises(sqlite3.IntegrityError):
             self.base_datos.registrar_producto(producto)
+
+    def test_registra_entrada_y_salida_en_el_historial(self):
+        producto = {
+            "id": "P-005",
+            "nombre": "Marcadores",
+            "categoria": "Papelería",
+            "precio": 12,
+            "stock": 10,
+            "ubicacion": "D-1",
+        }
+        self.base_datos.registrar_producto(producto)
+
+        self.assertEqual(
+            self.base_datos.registrar_movimiento_stock("P-005", "Entrada", 4, "Compra"), 14
+        )
+        self.assertEqual(
+            self.base_datos.registrar_movimiento_stock("P-005", "Salida", 3, "Uso interno"), 11
+        )
+
+        historial = self.base_datos.listar_movimientos()
+        self.assertEqual(len(historial), 2)
+        self.assertEqual(
+            {clave: historial[0][clave] for clave in (
+                "tipo", "producto_id", "producto_nombre", "cantidad", "stock_anterior",
+                "stock_nuevo", "motivo"
+            )},
+            {
+                "tipo": "Salida",
+                "producto_id": "P-005",
+                "producto_nombre": "Marcadores",
+                "cantidad": 3,
+                "stock_anterior": 14,
+                "stock_nuevo": 11,
+                "motivo": "Uso interno",
+            },
+        )
+        self.assertTrue(historial[0]["fecha"])
+        self.assertEqual(self.base_datos.listar_productos()[0]["stock"], 11)
+
+    def test_salida_invalida_no_cambia_stock_ni_crea_historial(self):
+        producto = {
+            "id": "P-006",
+            "nombre": "Carpetas",
+            "categoria": "Papelería",
+            "precio": 20,
+            "stock": 2,
+            "ubicacion": "D-2",
+        }
+        self.base_datos.registrar_producto(producto)
+
+        with self.assertRaises(ValueError):
+            self.base_datos.registrar_movimiento_stock("P-006", "Salida", 3, "Pedido")
+        with self.assertRaises(ValueError):
+            self.base_datos.registrar_movimiento_stock("P-006", "Entrada", 1, " ")
+
+        self.assertEqual(self.base_datos.listar_productos()[0]["stock"], 2)
+        self.assertEqual(self.base_datos.listar_movimientos(), [])
+
+    def test_inicializar_agrega_motivo_a_historial_existente(self):
+        ruta = Path(self.directorio_temporal.name) / "historial_anterior.db"
+        with closing(sqlite3.connect(ruta)) as conexion:
+            with conexion:
+                conexion.execute("""
+                    CREATE TABLE movimientos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        fecha TEXT NOT NULL,
+                        producto_id TEXT NOT NULL,
+                        producto_nombre TEXT NOT NULL,
+                        tipo TEXT NOT NULL,
+                        cantidad INTEGER NOT NULL,
+                        stock_anterior INTEGER NOT NULL,
+                        stock_nuevo INTEGER NOT NULL
+                    )
+                """)
+                conexion.execute("""
+                    INSERT INTO movimientos (
+                        fecha, producto_id, producto_nombre, tipo, cantidad,
+                        stock_anterior, stock_nuevo
+                    )
+                    VALUES ('2026-01-01 10:00:00', 'P-007', 'Plumas', 'Entrada', 2, 0, 2)
+                """)
+
+        base_datos_anterior = BaseDatosInventario(ruta)
+        base_datos_anterior.inicializar()
+
+        self.assertEqual(base_datos_anterior.listar_movimientos()[0]["motivo"], "Sin especificar")
 
 
 if __name__ == "__main__":
